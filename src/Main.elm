@@ -1,8 +1,34 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, pre, text)
-import Html.Events exposing (onClick)
+import Css
+    exposing
+        ( backgroundColor
+        , backgroundImage
+        , display
+        , displayFlex
+        , height
+        , hex
+        , linearGradient2
+        , rgba
+        , stop
+        , toBottomRight
+        , vh
+        )
+import Html.Styled
+    exposing
+        ( Html
+        , button
+        , div
+        , li
+        , p
+        , pre
+        , text
+        , toUnstyled
+        , ul
+        )
+import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Events exposing (onClick)
 import Http
 import Json.Decode
     exposing
@@ -25,7 +51,6 @@ import Json.Decode
         , string
         , succeed
         )
-import List
 
 
 main =
@@ -33,7 +58,7 @@ main =
         { init = init
         , subscriptions = subscriptions
         , update = update
-        , view = view
+        , view = view >> toUnstyled
         }
 
 
@@ -49,9 +74,40 @@ type alias Cell =
     }
 
 
+decodeCell : Decoder Cell
+decodeCell =
+    map8 Cell
+        (field "solution" string)
+        (field "row" int)
+        (field "col" int)
+        (field "grid_number" (nullable int))
+        (field "across_clue_index" (nullable int))
+        (field "across_start" bool)
+        (field "down_clue_index" (nullable int))
+        (field "down_start" bool)
+
+
 type ClueDirection
     = Across
     | Down
+
+
+direction : Decoder ClueDirection
+direction =
+    string |> andThen directionFromString
+
+
+directionFromString : String -> Decoder ClueDirection
+directionFromString dir =
+    case dir of
+        "Across" ->
+            succeed Across
+
+        "Down" ->
+            succeed Down
+
+        _ ->
+            fail ("Invalid direction " ++ dir)
 
 
 type alias CluegridSize =
@@ -75,8 +131,19 @@ type alias Clue =
     , solution : String
     , direction : ClueDirection
     , gridNumber : Maybe Int
-    , text : String
+    , clue_text : String
     }
+
+
+decodeClue : Decoder Clue
+decodeClue =
+    map6 Clue
+        (field "start_col" int)
+        (field "start_row" int)
+        (field "solution" string)
+        (field "direction" direction)
+        (field "number" (nullable int))
+        (field "text" string)
 
 
 type alias CluegridData =
@@ -87,10 +154,15 @@ type alias CluegridData =
     }
 
 
+type alias AppData =
+    { cluegridData : CluegridData
+    }
+
+
 type Model
     = Loading
     | Failure
-    | Success CluegridData
+    | Success AppData
 
 
 init : () -> ( Model, Cmd Msg )
@@ -107,54 +179,14 @@ type Msg
     = FetchedData (Result Http.Error CluegridData)
 
 
-direction : Decoder ClueDirection
-direction =
-    string |> andThen directionFromString
-
-
-directionFromString : String -> Decoder ClueDirection
-directionFromString dir =
-    case dir of
-        "Across" ->
-            succeed Across
-
-        "Down" ->
-            succeed Down
-
-        _ ->
-            fail ("Invalid direction " ++ dir)
-
-
 parseJSON : Decoder CluegridData
 parseJSON =
     map4 CluegridData
         (field "clues"
-            (list
-                (map6 Clue
-                    (field "start_col" int)
-                    (field "start_row" int)
-                    (field "solution" string)
-                    (field "direction" direction)
-                    (field "number" (nullable int))
-                    (field "text" string)
-                )
-            )
+            (list decodeClue)
         )
         (field "grid"
-            (list
-                (list
-                    (map8 Cell
-                        (field "solution" string)
-                        (field "row" int)
-                        (field "col" int)
-                        (field "grid_number" (nullable int))
-                        (field "across_clue_index" (nullable int))
-                        (field "across_start" bool)
-                        (field "down_clue_index" (nullable int))
-                        (field "down_start" bool)
-                    )
-                )
-            )
+            (list (list decodeCell))
         )
         (map2 CluegridSize
             (field "size" (field "rows" int))
@@ -175,7 +207,7 @@ update msg model =
         FetchedData data ->
             case data of
                 Ok cluegridData ->
-                    ( Success cluegridData, Cmd.none )
+                    ( Success (AppData cluegridData), Cmd.none )
 
                 Err _ ->
                     ( Failure, Cmd.none )
@@ -186,11 +218,52 @@ subscriptions model =
     Sub.none
 
 
+renderClue : Clue -> Html Msg
+renderClue clue =
+    div [] [ text clue.clue_text ]
+
+
+renderRow : List Cell -> Html Msg
+renderRow row =
+    div
+        [ class "row"
+        , css
+            [ displayFlex
+            ]
+        ]
+        (List.map (\cell -> p [ class "cell" ] [ renderCell cell ])
+            row
+        )
+
+
+renderCell : Cell -> Html Msg
+renderCell cell =
+    div [] [ text cell.solution ]
+
+
 view : Model -> Html Msg
 view model =
     case model of
-        Success cluegridData ->
-            pre [] [ text cluegridData.info.title ]
+        Success appData ->
+            div
+                [ class "crossword-container"
+                , css
+                    [ height (vh 100)
+                    , backgroundImage
+                        (linearGradient2
+                            toBottomRight
+                            (stop (rgba 59 232 176 0.863))
+                            [ stop (rgba 26 175 208 0.863)
+                            , stop (rgba 106 103 206 0.863)
+                            ]
+                            []
+                        )
+                    ]
+                ]
+                (List.map
+                    (\row -> div [] [ renderRow row ])
+                    appData.cluegridData.grid
+                )
 
         Failure ->
             text "Could not fetch data ‾\\_(ツ)_/‾"
