@@ -11067,6 +11067,7 @@ var $author$project$Main$Failure = {$: 'Failure'};
 var $author$project$Main$Success = function (a) {
 	return {$: 'Success', a: a};
 };
+var $author$project$Main$invalidCell = A8($author$project$Main$Cell, '', -1, -1, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, false, $elm$core$Maybe$Nothing, false);
 var $author$project$Main$getCellFromRowCol = F2(
 	function (cells, _v0) {
 		var row = _v0.a;
@@ -11076,7 +11077,7 @@ var $author$project$Main$getCellFromRowCol = F2(
 			row,
 			$elm$core$Array$fromList(cells));
 		if (_v1.$ === 'Nothing') {
-			return A8($author$project$Main$Cell, '', -1, -1, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, false, $elm$core$Maybe$Nothing, false);
+			return $author$project$Main$invalidCell;
 		} else {
 			var correctRow = _v1.a;
 			var _v2 = A2(
@@ -11084,12 +11085,16 @@ var $author$project$Main$getCellFromRowCol = F2(
 				col,
 				$elm$core$Array$fromList(correctRow));
 			if (_v2.$ === 'Nothing') {
-				return A8($author$project$Main$Cell, '', -1, -1, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, false, $elm$core$Maybe$Nothing, false);
+				return $author$project$Main$invalidCell;
 			} else {
 				var cell = _v2.a;
 				return cell;
 			}
 		}
+	});
+var $author$project$Main$isRowColEqual = F3(
+	function (cell, row, col) {
+		return _Utils_eq(cell.row, row) && _Utils_eq(cell.col, col);
 	});
 var $author$project$Main$resolveCellClueIndex = F2(
 	function (cell, clueDirection) {
@@ -11109,19 +11114,19 @@ var $author$project$Main$resolveCellClueIndex = F2(
 			}
 		}
 	});
-var $author$project$Main$updateActiveClue = F3(
-	function (activeClueIndex, cell, clues) {
+var $author$project$Main$updateActiveClue = F4(
+	function (activeClueIndex, cell, activeCell, clues) {
 		if (activeClueIndex.$ === 'Nothing') {
 			return A2($author$project$Main$resolveCellClueIndex, cell, $author$project$Main$Across);
 		} else {
 			var activeIndex = activeClueIndex.a;
 			var currentDirection = function () {
-				var _v2 = A2(
+				var _v4 = A2(
 					$elm$core$Array$get,
 					activeIndex,
 					$elm$core$Array$fromList(clues));
-				if (_v2.$ === 'Just') {
-					var clue = _v2.a;
+				if (_v4.$ === 'Just') {
+					var clue = _v4.a;
 					return clue.direction;
 				} else {
 					return $author$project$Main$Across;
@@ -11134,9 +11139,17 @@ var $author$project$Main$updateActiveClue = F3(
 					return $author$project$Main$Across;
 				}
 			}();
-			return _Utils_eq(
-				activeClueIndex,
-				A2($author$project$Main$resolveCellClueIndex, cell, currentDirection)) ? A2($author$project$Main$resolveCellClueIndex, cell, otherDirection) : A2($author$project$Main$resolveCellClueIndex, cell, currentDirection);
+			var cellReclicked = function () {
+				if (activeCell.$ === 'Nothing') {
+					return false;
+				} else {
+					var _v2 = activeCell.a;
+					var row = _v2.a;
+					var col = _v2.b;
+					return A3($author$project$Main$isRowColEqual, cell, row, col) ? true : false;
+				}
+			}();
+			return cellReclicked ? A2($author$project$Main$resolveCellClueIndex, cell, otherDirection) : A2($author$project$Main$resolveCellClueIndex, cell, currentDirection);
 		}
 	});
 var $author$project$Main$update = F2(
@@ -11163,13 +11176,14 @@ var $author$project$Main$update = F2(
 							A3(
 								$author$project$Main$AppData,
 								appData.cluegridData,
-								A3(
+								A4(
 									$author$project$Main$updateActiveClue,
 									appData.activeClueIndex,
 									A2(
 										$author$project$Main$getCellFromRowCol,
 										appData.cluegridData.grid,
 										_Utils_Tuple2(rowNum, colNum)),
+									appData.activeCell,
 									appData.cluegridData.clues),
 								$elm$core$Maybe$Just(
 									_Utils_Tuple2(rowNum, colNum)))),

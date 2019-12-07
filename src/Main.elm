@@ -64,6 +64,10 @@ type alias Cell =
     }
 
 
+invalidCell =
+    Cell "" -1 -1 Nothing Nothing False Nothing False
+
+
 decodeCell : Decoder Cell
 decodeCell =
     map8 Cell
@@ -216,6 +220,7 @@ update msg model =
                                     appData.cluegridData.grid
                                     ( rowNum, colNum )
                                 )
+                                appData.activeCell
                                 appData.cluegridData.clues
                             )
                             (Just ( rowNum, colNum ))
@@ -254,13 +259,13 @@ getCellFromRowCol cells ( row, col ) =
     case Array.get row (Array.fromList cells) of
         Nothing ->
             -- TODO (07 Dec 2019 sam): What to do here?
-            Cell "" -1 -1 Nothing Nothing False Nothing False
+            invalidCell
 
         Just correctRow ->
             case Array.get col (Array.fromList correctRow) of
                 Nothing ->
                     -- TODO (07 Dec 2019 sam): What to do here?
-                    Cell "" -1 -1 Nothing Nothing False Nothing False
+                    invalidCell
 
                 Just cell ->
                     cell
@@ -294,8 +299,8 @@ resolveCellClueIndex cell clueDirection =
                     cell.acrossClueIndex
 
 
-updateActiveClue : Maybe Int -> Cell -> List Clue -> Maybe Int
-updateActiveClue activeClueIndex cell clues =
+updateActiveClue : Maybe Int -> Cell -> Maybe ( Int, Int ) -> List Clue -> Maybe Int
+updateActiveClue activeClueIndex cell activeCell clues =
     case activeClueIndex of
         Nothing ->
             resolveCellClueIndex cell Across
@@ -317,8 +322,20 @@ updateActiveClue activeClueIndex cell clues =
 
                         Down ->
                             Across
+
+                cellReclicked =
+                    case activeCell of
+                        Nothing ->
+                            False
+
+                        Just ( row, col ) ->
+                            if isRowColEqual cell row col then
+                                True
+
+                            else
+                                False
             in
-            if activeClueIndex == resolveCellClueIndex cell currentDirection then
+            if cellReclicked then
                 resolveCellClueIndex cell otherDirection
 
             else
