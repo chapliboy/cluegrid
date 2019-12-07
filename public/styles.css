@@ -1,0 +1,52 @@
+body {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 300;
+}
+
+.crossword-container {
+  height: 100vh;
+  background: linear-gradient(120deg, #3be8b0dd, #1aafd0dd, #6a67cedd);
+}
+
+.crossword-row {
+  display: flex;
+  margin-bottom: 0px;
+}
+
+.crossword-cell {
+  background-color: #ffffff99;
+  border-radius: 0.6em;
+  position: relative;
+  margin: 2px;
+  height: 3em;
+  width: 3em;
+  text-align: center;
+  color: #555;
+}
+
+.crossword-cell-grid-number {
+  font-size: 0.6em;
+  position: absolute;
+  top: 2px;
+  left: 3px;
+}
+
+.crossword-cell-is-blank {
+  background-color: #33333333;
+}
+
+.crossword-cell-solution {
+  padding-top: 0.35em;
+  font-size: 1.6em;
+  font-weight: 900;
+  color: #33333388;
+}
+
+.crossword-cell-is-active-clue {
+  /* background-color: #ffff4499; */
+  background-color: #ccccff99;
+}
+
+.crossword-cell-is-active {
+  background-color: #ffaaff99;
+}

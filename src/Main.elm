@@ -1,21 +1,9 @@
 module Main exposing (..)
 
+import Array
 import Browser
-import Css
-    exposing
-        ( backgroundColor
-        , backgroundImage
-        , display
-        , displayFlex
-        , height
-        , hex
-        , linearGradient2
-        , rgba
-        , stop
-        , toBottomRight
-        , vh
-        )
-import Html.Styled
+import Debug exposing (log)
+import Html
     exposing
         ( Html
         , button
@@ -24,11 +12,13 @@ import Html.Styled
         , p
         , pre
         , text
-        , toUnstyled
-        , ul
         )
-import Html.Styled.Attributes exposing (class, css)
-import Html.Styled.Events exposing (onClick)
+import Html.Attributes
+    exposing
+        ( class
+        , classList
+        )
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode
     exposing
@@ -58,7 +48,7 @@ main =
         { init = init
         , subscriptions = subscriptions
         , update = update
-        , view = view >> toUnstyled
+        , view = view
         }
 
 
@@ -156,6 +146,8 @@ type alias CluegridData =
 
 type alias AppData =
     { cluegridData : CluegridData
+    , activeClueIndex : Maybe Int
+    , activeCell : Maybe ( Int, Int )
     }
 
 
@@ -177,6 +169,7 @@ init _ =
 
 type Msg
     = FetchedData (Result Http.Error CluegridData)
+    | CellClicked Int Int
 
 
 parseJSON : Decoder CluegridData
@@ -207,9 +200,32 @@ update msg model =
         FetchedData data ->
             case data of
                 Ok cluegridData ->
-                    ( Success (AppData cluegridData), Cmd.none )
+                    ( Success (AppData cluegridData Nothing Nothing), Cmd.none )
 
                 Err _ ->
+                    ( Failure, Cmd.none )
+
+        CellClicked rowNum colNum ->
+            case model of
+                Success appData ->
+                    ( Success
+                        (AppData
+                            appData.cluegridData
+                            (updateActiveClue appData.activeClueIndex
+                                (getCellFromRowCol
+                                    appData.cluegridData.grid
+                                    ( rowNum, colNum )
+                                )
+                            )
+                            (Just ( rowNum, colNum ))
+                        )
+                    , Cmd.none
+                    )
+
+                Loading ->
+                    ( Loading, Cmd.none )
+
+                Failure ->
                     ( Failure, Cmd.none )
 
 
@@ -223,50 +239,173 @@ renderClue clue =
     div [] [ text clue.clue_text ]
 
 
-renderRow : List Cell -> Html Msg
-renderRow row =
+renderRow : List Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
+renderRow row activeClueIndex activeCell =
     div
-        [ class "row"
-        , css
-            [ displayFlex
-            ]
-        ]
-        (List.map (\cell -> p [ class "cell" ] [ renderCell cell ])
+        [ class "crossword-row" ]
+        (List.map (\cell -> renderCell cell activeClueIndex activeCell)
             row
         )
 
 
-renderCell : Cell -> Html Msg
-renderCell cell =
-    div [] [ text cell.solution ]
+getCellFromRowCol : List (List Cell) -> ( Int, Int ) -> Cell
+getCellFromRowCol cells ( row, col ) =
+    case Array.get row (Array.fromList cells) of
+        Nothing ->
+            -- TODO (07 Dec 2019 sam): What to do here?
+            Cell "" -1 -1 Nothing Nothing False Nothing False
+
+        Just correctRow ->
+            case Array.get col (Array.fromList correctRow) of
+                Nothing ->
+                    -- TODO (07 Dec 2019 sam): What to do here?
+                    Cell "" -1 -1 Nothing Nothing False Nothing False
+
+                Just cell ->
+                    cell
+
+
+isRowColEqual : Cell -> Int -> Int -> Bool
+isRowColEqual cell row col =
+    cell.row == row && cell.col == col
+
+
+resolveCellClueIndex : Cell -> ClueDirection -> Maybe Int
+resolveCellClueIndex cell clueDirection =
+    -- helper function to return the acrossClueIndex of a cell if it exists
+    -- otherwise return the downClueIndex. Written so that we can avoid having
+    -- to write multiple case statements to check for `Nothing`
+    case clueDirection of
+        Across ->
+            case cell.acrossClueIndex of
+                Just _ ->
+                    cell.acrossClueIndex
+
+                Nothing ->
+                    cell.downClueIndex
+
+        Down ->
+            case cell.downClueIndex of
+                Just _ ->
+                    cell.downClueIndex
+
+                Nothing ->
+                    cell.acrossClueIndex
+
+
+updateActiveClue : Maybe Int -> Cell -> Maybe Int
+updateActiveClue activeClueIndex cell =
+    case activeClueIndex of
+        Nothing ->
+            resolveCellClueIndex cell Across
+
+        Just activeIndex ->
+            if activeClueIndex == resolveCellClueIndex cell Across then
+                resolveCellClueIndex cell Down
+
+            else
+                resolveCellClueIndex cell Across
+
+
+crosswordCellisBlank : Cell -> Bool
+crosswordCellisBlank cell =
+    cell.solution == "."
+
+
+crosswordCellSolution : String -> String
+crosswordCellSolution solution =
+    if solution == "." then
+        ""
+
+    else
+        solution
+
+
+isActiveCell : Cell -> Maybe ( Int, Int ) -> Bool
+isActiveCell cell activeCell =
+    case activeCell of
+        Just ( rowNum, colNum ) ->
+            rowNum == cell.row && colNum == cell.col
+
+        Nothing ->
+            False
+
+
+isActiveCellClue : Cell -> Maybe Int -> Bool
+isActiveCellClue cell activeClueIndex =
+    case activeClueIndex of
+        Just index ->
+            (case cell.acrossClueIndex of
+                Just clueIndex ->
+                    index == clueIndex
+
+                Nothing ->
+                    False
+            )
+                || (case cell.downClueIndex of
+                        Just clueIndex ->
+                            index == clueIndex
+
+                        Nothing ->
+                            False
+                   )
+
+        Nothing ->
+            False
+
+
+renderCell : Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
+renderCell cell activeClueIndex activeCell =
+    div
+        [ classList
+            [ ( "crossword-cell", True )
+            , ( "crossword-cell-is-blank", crosswordCellisBlank cell )
+            , ( "crossword-cell-is-active", isActiveCell cell activeCell )
+            , ( "crossword-cell-is-active-clue", isActiveCellClue cell activeClueIndex )
+            ]
+        , onClick (CellClicked cell.row cell.col)
+        ]
+        [ div
+            [ classList
+                [ ( "crossword-cell-grid-number", True )
+                ]
+            ]
+            [ text
+                (case cell.gridNumber of
+                    Just num ->
+                        String.fromInt num
+
+                    Nothing ->
+                        ""
+                )
+            ]
+        , div [ class "crossword-cell-solution" ]
+            [ text (crosswordCellSolution cell.solution) ]
+        ]
+
+
+renderAppData : AppData -> Html Msg
+renderAppData appData =
+    div
+        [ class "crossword-container" ]
+        (List.map
+            (\row -> renderRow row appData.activeClueIndex appData.activeCell)
+            appData.cluegridData.grid
+        )
 
 
 view : Model -> Html Msg
 view model =
     case model of
         Success appData ->
-            div
-                [ class "crossword-container"
-                , css
-                    [ height (vh 100)
-                    , backgroundImage
-                        (linearGradient2
-                            toBottomRight
-                            (stop (rgba 59 232 176 0.863))
-                            [ stop (rgba 26 175 208 0.863)
-                            , stop (rgba 106 103 206 0.863)
-                            ]
-                            []
-                        )
-                    ]
-                ]
-                (List.map
-                    (\row -> div [] [ renderRow row ])
-                    appData.cluegridData.grid
-                )
+            renderAppData appData
 
         Failure ->
-            text "Could not fetch data ‾\\_(ツ)_/‾"
+            div
+                [ class "crossword-container" ]
+                [ text "Could not fetch data ‾\\_(ツ)_/‾" ]
 
         Loading ->
-            text "loading data..."
+            div
+                [ class "crossword-container" ]
+                [ text "loading data..." ]
