@@ -216,6 +216,7 @@ update msg model =
                                     appData.cluegridData.grid
                                     ( rowNum, colNum )
                                 )
+                                appData.cluegridData.clues
                             )
                             (Just ( rowNum, colNum ))
                         )
@@ -293,18 +294,35 @@ resolveCellClueIndex cell clueDirection =
                     cell.acrossClueIndex
 
 
-updateActiveClue : Maybe Int -> Cell -> Maybe Int
-updateActiveClue activeClueIndex cell =
+updateActiveClue : Maybe Int -> Cell -> List Clue -> Maybe Int
+updateActiveClue activeClueIndex cell clues =
     case activeClueIndex of
         Nothing ->
             resolveCellClueIndex cell Across
 
         Just activeIndex ->
-            if activeClueIndex == resolveCellClueIndex cell Across then
-                resolveCellClueIndex cell Down
+            let
+                currentDirection =
+                    case Array.get activeIndex (Array.fromList clues) of
+                        Just clue ->
+                            clue.direction
+
+                        Nothing ->
+                            Across
+
+                otherDirection =
+                    case currentDirection of
+                        Across ->
+                            Down
+
+                        Down ->
+                            Across
+            in
+            if activeClueIndex == resolveCellClueIndex cell currentDirection then
+                resolveCellClueIndex cell otherDirection
 
             else
-                resolveCellClueIndex cell Across
+                resolveCellClueIndex cell currentDirection
 
 
 crosswordCellisBlank : Cell -> Bool

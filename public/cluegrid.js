@@ -11109,15 +11109,34 @@ var $author$project$Main$resolveCellClueIndex = F2(
 			}
 		}
 	});
-var $author$project$Main$updateActiveClue = F2(
-	function (activeClueIndex, cell) {
+var $author$project$Main$updateActiveClue = F3(
+	function (activeClueIndex, cell, clues) {
 		if (activeClueIndex.$ === 'Nothing') {
 			return A2($author$project$Main$resolveCellClueIndex, cell, $author$project$Main$Across);
 		} else {
 			var activeIndex = activeClueIndex.a;
+			var currentDirection = function () {
+				var _v2 = A2(
+					$elm$core$Array$get,
+					activeIndex,
+					$elm$core$Array$fromList(clues));
+				if (_v2.$ === 'Just') {
+					var clue = _v2.a;
+					return clue.direction;
+				} else {
+					return $author$project$Main$Across;
+				}
+			}();
+			var otherDirection = function () {
+				if (currentDirection.$ === 'Across') {
+					return $author$project$Main$Down;
+				} else {
+					return $author$project$Main$Across;
+				}
+			}();
 			return _Utils_eq(
 				activeClueIndex,
-				A2($author$project$Main$resolveCellClueIndex, cell, $author$project$Main$Across)) ? A2($author$project$Main$resolveCellClueIndex, cell, $author$project$Main$Down) : A2($author$project$Main$resolveCellClueIndex, cell, $author$project$Main$Across);
+				A2($author$project$Main$resolveCellClueIndex, cell, currentDirection)) ? A2($author$project$Main$resolveCellClueIndex, cell, otherDirection) : A2($author$project$Main$resolveCellClueIndex, cell, currentDirection);
 		}
 	});
 var $author$project$Main$update = F2(
@@ -11144,13 +11163,14 @@ var $author$project$Main$update = F2(
 							A3(
 								$author$project$Main$AppData,
 								appData.cluegridData,
-								A2(
+								A3(
 									$author$project$Main$updateActiveClue,
 									appData.activeClueIndex,
 									A2(
 										$author$project$Main$getCellFromRowCol,
 										appData.cluegridData.grid,
-										_Utils_Tuple2(rowNum, colNum))),
+										_Utils_Tuple2(rowNum, colNum)),
+									appData.cluegridData.clues),
 								$elm$core$Maybe$Just(
 									_Utils_Tuple2(rowNum, colNum)))),
 						$elm$core$Platform$Cmd$none);
