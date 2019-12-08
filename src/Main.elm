@@ -42,6 +42,7 @@ import Json.Decode
         , map4
         , map5
         , map6
+        , map7
         , map8
         , nullable
         , string
@@ -58,33 +59,47 @@ main =
         }
 
 
+type alias CellClueStarts =
+    { acrossStart : Bool
+    , downStart : Bool
+    }
+
+
 type alias Cell =
     { solution : String
     , row : Int
     , col : Int
     , gridNumber : Maybe Int
     , acrossClueIndex : Maybe Int
-    , acrossStart : Bool
     , downClueIndex : Maybe Int
-    , downStart : Bool
+    , entry : Maybe String
+
+    -- , cellClueStarts : CellClueStarts
     }
 
 
 invalidCell =
-    Cell "" -1 -1 Nothing Nothing False Nothing False
+    Cell "" -1 -1 Nothing Nothing Nothing (Just "")
+
+
+
+-- (CellClueStarts False False)
 
 
 decodeCell : Decoder Cell
 decodeCell =
-    map8 Cell
+    map7 Cell
         (field "solution" string)
         (field "row" int)
         (field "col" int)
         (field "grid_number" (nullable int))
         (field "across_clue_index" (nullable int))
-        (field "across_start" bool)
         (field "down_clue_index" (nullable int))
-        (field "down_start" bool)
+        (succeed Nothing)
+
+
+
+-- (field "across_start" bool)
 
 
 type ClueDirection
@@ -191,7 +206,7 @@ type ControlKey
 
 
 type KeyboardInput
-    = LetterKey Char
+    = LetterKey String
     | ArrowKey ArrowKeyDirection
     | ControlKey ControlKey
     | UnsupportedKey
@@ -279,7 +294,11 @@ update msg model =
                                     ( Success (moveDown appData), Cmd.none )
 
                         LetterKey letter ->
-                            ( Success appData, Cmd.none )
+                            let
+                                _ =
+                                    Debug.log "letter pressed" letter
+                            in
+                            ( Success (changeActiveEntry appData letter), Cmd.none )
 
                 Loading ->
                     ( Loading, Cmd.none )
@@ -306,8 +325,60 @@ selectCell appData rowNum colNum =
             appData
 
 
-moveCell : AppData -> Int -> Int -> AppData
-moveCell appData rowChange colChange =
+changeActiveEntry : AppData -> String -> AppData
+changeActiveEntry appData letter =
+    case appData.activeCell of
+        Just ( row, col ) ->
+            case getCellFromRowCol appData.cluegridData.grid ( row, col ) of
+                Just cellAtRowCol ->
+                    updateCellEntry cellAtRowCol letter appData
+
+                Nothing ->
+                    appData
+
+        Nothing ->
+            appData
+
+
+isCellEqual : Cell -> Cell -> Bool
+isCellEqual cell1 cell2 =
+    cell1.row == cell2.row && cell1.col == cell2.col
+
+
+updateCellInRow : Cell -> List Cell -> String -> List Cell
+updateCellInRow cellToUpdate row letter =
+    List.map
+        (\cell ->
+            if isCellEqual cell cellToUpdate then
+                { cell | entry = Just letter }
+
+            else
+                cell
+        )
+        row
+
+
+updateCellEntry : Cell -> String -> AppData -> AppData
+updateCellEntry cellToUpdate letter appData =
+    let
+        newGrid =
+            List.map
+                (\row -> updateCellInRow cellToUpdate row letter)
+                appData.cluegridData.grid
+
+        cluegridData =
+            appData.cluegridData
+    in
+    moveNext
+        (AppData
+            { cluegridData | grid = newGrid }
+            appData.activeClueIndex
+            appData.activeCell
+        )
+
+
+moveCell : AppData -> AppData -> Int -> Int -> AppData
+moveCell originalAppData appData rowChange colChange =
     case appData.activeCell of
         Nothing ->
             selectCell appData 0 0
@@ -317,6 +388,7 @@ moveCell appData rowChange colChange =
                 Just cellAtRowCol ->
                     if crosswordCellisBlank cellAtRowCol then
                         moveCell
+                            originalAppData
                             (AppData appData.cluegridData
                                 appData.activeClueIndex
                                 (Just ( row + rowChange, col + colChange ))
@@ -328,46 +400,73 @@ moveCell appData rowChange colChange =
                         selectCell appData (row + rowChange) (col + colChange)
 
                 Nothing ->
-                    appData
+                    originalAppData
 
 
 moveRight : AppData -> AppData
 moveRight appData =
-    moveCell appData 0 1
+    moveCell appData appData 0 1
 
 
 moveLeft : AppData -> AppData
 moveLeft appData =
-    moveCell appData 0 -1
+    moveCell appData appData 0 -1
 
 
 moveUp : AppData -> AppData
 moveUp appData =
-    moveCell appData -1 0
+    moveCell appData appData -1 0
 
 
 moveDown : AppData -> AppData
 moveDown appData =
-    moveCell appData 1 0
+    moveCell appData appData 1 0
+
+
+moveNext : AppData -> AppData
+moveNext appData =
+    case appData.activeClueIndex of
+        Just clueIndex ->
+            case Array.get clueIndex (Array.fromList appData.cluegridData.clues) of
+                Just clue ->
+                    case clue.direction of
+                        Across ->
+                            moveRight appData
+
+                        Down ->
+                            moveDown appData
+
+                Nothing ->
+                    appData
+
+        Nothing ->
+            appData
 
 
 keyToKeyboardInput : String -> KeyboardInput
 keyToKeyboardInput code =
-    case code of
-        "ArrowRight" ->
-            ArrowKey ArrowKeyRight
+    if String.startsWith "Arrow" code then
+        case code of
+            "ArrowRight" ->
+                ArrowKey ArrowKeyRight
 
-        "ArrowLeft" ->
-            ArrowKey ArrowKeyLeft
+            "ArrowLeft" ->
+                ArrowKey ArrowKeyLeft
 
-        "ArrowUp" ->
-            ArrowKey ArrowKeyUp
+            "ArrowUp" ->
+                ArrowKey ArrowKeyUp
 
-        "ArrowDown" ->
-            ArrowKey ArrowKeyDown
+            "ArrowDown" ->
+                ArrowKey ArrowKeyDown
 
-        _ ->
-            UnsupportedKey
+            _ ->
+                UnsupportedKey
+
+    else if String.startsWith "Key" code then
+        LetterKey (String.slice 3 4 code)
+
+    else
+        UnsupportedKey
 
 
 decodeKeyboardInput : Decoder KeyboardInput
@@ -574,7 +673,15 @@ renderCell cell activeClueIndex activeCell =
                 )
             ]
         , div [ class "crossword-cell-solution" ]
-            [ text (crosswordCellSolution cell.solution) ]
+            [ text
+                (case cell.entry of
+                    Just entry ->
+                        entry
+
+                    Nothing ->
+                        ""
+                )
+            ]
         ]
 
 
