@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Array
 import Browser
+import Browser.Events
 import Debug exposing (log)
 import Html
     exposing
@@ -18,7 +19,12 @@ import Html.Attributes
         ( class
         , classList
         )
-import Html.Events exposing (onClick)
+import Html.Events
+    exposing
+        ( keyCode
+        , on
+        , onClick
+        )
 import Http
 import Json.Decode
     exposing
@@ -171,9 +177,30 @@ init _ =
     )
 
 
+type ArrowKeyDirection
+    = ArrowKeyUp
+    | ArrowKeyDown
+    | ArrowKeyLeft
+    | ArrowKeyRight
+
+
+type ControlKey
+    = SpaceBar
+    | EnterKey
+    | BackspaceKey
+
+
+type KeyboardInput
+    = LetterKey Char
+    | ArrowKey ArrowKeyDirection
+    | ControlKey ControlKey
+    | UnsupportedKey
+
+
 type Msg
     = FetchedData (Result Http.Error CluegridData)
     | CellClicked Int Int
+    | KeyPressed String
 
 
 parseJSON : Decoder CluegridData
@@ -212,21 +239,47 @@ update msg model =
         CellClicked rowNum colNum ->
             case model of
                 Success appData ->
-                    ( Success
-                        (AppData
-                            appData.cluegridData
-                            (updateActiveClue appData.activeClueIndex
-                                (getCellFromRowCol
-                                    appData.cluegridData.grid
-                                    ( rowNum, colNum )
-                                )
-                                appData.activeCell
-                                appData.cluegridData.clues
-                            )
-                            (Just ( rowNum, colNum ))
-                        )
-                    , Cmd.none
-                    )
+                    ( Success (selectCell appData rowNum colNum), Cmd.none )
+
+                Loading ->
+                    ( Loading, Cmd.none )
+
+                Failure ->
+                    ( Failure, Cmd.none )
+
+        KeyPressed key ->
+            let
+                _ =
+                    Debug.log "keyPressed" key
+
+                keyInput =
+                    keyToKeyboardInput key
+            in
+            case model of
+                Success appData ->
+                    case keyInput of
+                        UnsupportedKey ->
+                            ( Success appData, Cmd.none )
+
+                        ControlKey control ->
+                            ( Success appData, Cmd.none )
+
+                        ArrowKey arrow ->
+                            case arrow of
+                                ArrowKeyRight ->
+                                    ( Success (moveRight appData), Cmd.none )
+
+                                ArrowKeyLeft ->
+                                    ( Success (moveLeft appData), Cmd.none )
+
+                                ArrowKeyUp ->
+                                    ( Success (moveUp appData), Cmd.none )
+
+                                ArrowKeyDown ->
+                                    ( Success (moveDown appData), Cmd.none )
+
+                        LetterKey letter ->
+                            ( Success appData, Cmd.none )
 
                 Loading ->
                     ( Loading, Cmd.none )
@@ -235,9 +288,103 @@ update msg model =
                     ( Failure, Cmd.none )
 
 
+selectCell : AppData -> Int -> Int -> AppData
+selectCell appData rowNum colNum =
+    case getCellFromRowCol appData.cluegridData.grid ( rowNum, colNum ) of
+        Just cellAtRowCol ->
+            AppData
+                appData.cluegridData
+                (updateActiveClue
+                    appData.activeClueIndex
+                    cellAtRowCol
+                    appData.activeCell
+                    appData.cluegridData.clues
+                )
+                (Just ( rowNum, colNum ))
+
+        Nothing ->
+            appData
+
+
+moveCell : AppData -> Int -> Int -> AppData
+moveCell appData rowChange colChange =
+    case appData.activeCell of
+        Nothing ->
+            selectCell appData 0 0
+
+        Just ( row, col ) ->
+            case getCellFromRowCol appData.cluegridData.grid ( row + rowChange, col + colChange ) of
+                Just cellAtRowCol ->
+                    if crosswordCellisBlank cellAtRowCol then
+                        moveCell
+                            (AppData appData.cluegridData
+                                appData.activeClueIndex
+                                (Just ( row + rowChange, col + colChange ))
+                            )
+                            rowChange
+                            colChange
+
+                    else
+                        selectCell appData (row + rowChange) (col + colChange)
+
+                Nothing ->
+                    appData
+
+
+moveRight : AppData -> AppData
+moveRight appData =
+    moveCell appData 0 1
+
+
+moveLeft : AppData -> AppData
+moveLeft appData =
+    moveCell appData 0 -1
+
+
+moveUp : AppData -> AppData
+moveUp appData =
+    moveCell appData -1 0
+
+
+moveDown : AppData -> AppData
+moveDown appData =
+    moveCell appData 1 0
+
+
+keyToKeyboardInput : String -> KeyboardInput
+keyToKeyboardInput code =
+    case code of
+        "ArrowRight" ->
+            ArrowKey ArrowKeyRight
+
+        "ArrowLeft" ->
+            ArrowKey ArrowKeyLeft
+
+        "ArrowUp" ->
+            ArrowKey ArrowKeyUp
+
+        "ArrowDown" ->
+            ArrowKey ArrowKeyDown
+
+        _ ->
+            UnsupportedKey
+
+
+decodeKeyboardInput : Decoder KeyboardInput
+decodeKeyboardInput =
+    -- FIXME (08 Dec 2019 sam): Decoder doesn't seem to be working. Currently, I'm
+    -- converting string to KeyboardInput in the update function instead...
+    map keyToKeyboardInput (field "code" string)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Browser.Events.onKeyDown
+            (map KeyPressed
+                (field "code" string)
+            )
+        ]
 
 
 renderClue : Clue -> Html Msg
@@ -254,21 +401,21 @@ renderRow row activeClueIndex activeCell =
         )
 
 
-getCellFromRowCol : List (List Cell) -> ( Int, Int ) -> Cell
+getCellFromRowCol : List (List Cell) -> ( Int, Int ) -> Maybe Cell
 getCellFromRowCol cells ( row, col ) =
     case Array.get row (Array.fromList cells) of
         Nothing ->
             -- TODO (07 Dec 2019 sam): What to do here?
-            invalidCell
+            Nothing
 
         Just correctRow ->
             case Array.get col (Array.fromList correctRow) of
                 Nothing ->
                     -- TODO (07 Dec 2019 sam): What to do here?
-                    invalidCell
+                    Nothing
 
                 Just cell ->
-                    cell
+                    Just cell
 
 
 isRowColEqual : Cell -> Int -> Int -> Bool
@@ -278,9 +425,11 @@ isRowColEqual cell row col =
 
 resolveCellClueIndex : Cell -> ClueDirection -> Maybe Int
 resolveCellClueIndex cell clueDirection =
-    -- helper function to return the acrossClueIndex of a cell if it exists
-    -- otherwise return the downClueIndex. Written so that we can avoid having
-    -- to write multiple case statements to check for `Nothing`
+    {-
+       helper function to return the clueDirectionIndex of a cell if it exists
+       otherwise return the otherDirection. Written so that we can avoid having
+       to write multiple case statements to check for `Nothing`
+    -}
     case clueDirection of
         Across ->
             case cell.acrossClueIndex of
@@ -301,6 +450,16 @@ resolveCellClueIndex cell clueDirection =
 
 updateActiveClue : Maybe Int -> Cell -> Maybe ( Int, Int ) -> List Clue -> Maybe Int
 updateActiveClue activeClueIndex cell activeCell clues =
+    {-
+       Based on which the new selected cell is, the active clue would have to be
+       updated accordingly.
+            If there was no clue selected, then select the Across clue of the
+        selected cell.
+            If a clue was previously selected, we get the direction of that clue.
+            We then check whether the selected cell was already active.
+                If it was active, then toggle the clueDirection
+                If it wasn't active, select the currentDirection clue of selectedCell
+    -}
     case activeClueIndex of
         Nothing ->
             resolveCellClueIndex cell Across
@@ -419,10 +578,16 @@ renderCell cell activeClueIndex activeCell =
         ]
 
 
+onKeyUp : (Int -> msg) -> Html.Attribute msg
+onKeyUp tagger =
+    on "keyup" (map tagger keyCode)
+
+
 renderAppData : AppData -> Html Msg
 renderAppData appData =
     div
-        [ class "crossword-container" ]
+        [ class "crossword-container"
+        ]
         (List.map
             (\row -> renderRow row appData.activeClueIndex appData.activeCell)
             appData.cluegridData.grid
