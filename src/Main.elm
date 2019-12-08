@@ -382,6 +382,9 @@ handleKeyInput key appData =
                                 _ ->
                                     appData
 
+                        LetterKey letter ->
+                            changeActiveEntry appData letter
+
                         _ ->
                             appData
 
@@ -807,6 +810,16 @@ isActiveClue clue activeClueIndex clues =
             False
 
 
+clueDirectionToText : ClueDirection -> String
+clueDirectionToText direction =
+    case direction of
+        Across ->
+            "Across"
+
+        Down ->
+            "Down"
+
+
 renderClue : Clue -> Int -> Maybe Int -> List Clue -> Html Msg
 renderClue clue clueIndex activeClueIndex clues =
     div
@@ -817,7 +830,8 @@ renderClue clue clueIndex activeClueIndex clues =
         , onClick (ClueClicked clueIndex)
         ]
         [ strong [ class "cluegrid-clue-number" ] [ text (String.fromInt clue.gridNumber) ]
-        , text (unescape clue.clue_text)
+        , strong [ class "cluegrid-clue-direction" ] [ text (clueDirectionToText clue.direction) ]
+        , div [ class "cluegrid-clue-text" ] [ text (unescape clue.clue_text) ]
         ]
 
 

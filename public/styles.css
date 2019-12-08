@@ -40,6 +40,9 @@ body {
   margin: 1rem;
   margin-top: 0.1rem;
   margin-bottom: 0.1rem;
+  color: #555;
+  display: flex;
+  justify-content: flex-start;
 }
 
 .cluegrid-clue-is-active {
@@ -48,6 +51,14 @@ body {
 
 .cluegrid-clue-number {
   font-weight: 900;
+  width: 1.5em;
+}
+
+.cluegrid-clue-direction {
+  font-weight: 900;
+  width: 4em;
+}
+.cluegrid-clue-text {
 }
 
 .cluegrid-crossword-row {

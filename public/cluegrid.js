@@ -11617,18 +11617,22 @@ var $author$project$Main$handleKeyInput = F2(
 			var _v4 = appData.activeClueIndex;
 			if (_v4.$ === 'Just') {
 				var clueIndex = _v4.a;
-				if (keyInput.$ === 'ArrowKey') {
-					var arrow = keyInput.a;
-					switch (arrow.$) {
-						case 'ArrowKeyUp':
-							return A2($author$project$Main$setActiveClue, appData, clueIndex - 1);
-						case 'ArrowKeyDown':
-							return A2($author$project$Main$setActiveClue, appData, clueIndex + 1);
-						default:
-							return appData;
-					}
-				} else {
-					return appData;
+				switch (keyInput.$) {
+					case 'ArrowKey':
+						var arrow = keyInput.a;
+						switch (arrow.$) {
+							case 'ArrowKeyUp':
+								return A2($author$project$Main$setActiveClue, appData, clueIndex - 1);
+							case 'ArrowKeyDown':
+								return A2($author$project$Main$setActiveClue, appData, clueIndex + 1);
+							default:
+								return appData;
+						}
+					case 'LetterKey':
+						var letter = keyInput.a;
+						return A2($author$project$Main$changeActiveEntry, appData, letter);
+					default:
+						return appData;
 				}
 			} else {
 				return appData;
@@ -11713,6 +11717,13 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$List$map,
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $author$project$Main$clueDirectionToText = function (direction) {
+	if (direction.$ === 'Across') {
+		return 'Across';
+	} else {
+		return 'Down';
+	}
 };
 var $author$project$Main$isActiveClue = F3(
 	function (clue, activeClueIndex, clues) {
@@ -12428,8 +12439,28 @@ var $author$project$Main$renderClue = F4(
 							$elm$html$Html$text(
 							$elm$core$String$fromInt(clue.gridNumber))
 						])),
-					$elm$html$Html$text(
-					$marcosh$elm_html_to_unicode$ElmEscapeHtml$unescape(clue.clue_text))
+					A2(
+					$elm$html$Html$strong,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-clue-direction')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							$author$project$Main$clueDirectionToText(clue.direction))
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-clue-text')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							$marcosh$elm_html_to_unicode$ElmEscapeHtml$unescape(clue.clue_text))
+						]))
 				]));
 	});
 var $author$project$Main$renderCluesData = F2(
