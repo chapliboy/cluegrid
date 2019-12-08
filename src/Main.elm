@@ -4,6 +4,7 @@ import Array
 import Browser
 import Browser.Events
 import Debug exposing (log)
+import ElmEscapeHtml exposing (unescape)
 import Html
     exposing
         ( Html
@@ -25,6 +26,7 @@ import Html.Events
         ( keyCode
         , on
         , onClick
+        , preventDefaultOn
         )
 import Http
 import Json.Decode
@@ -271,11 +273,19 @@ update msg model =
 
                 CellClicked rowNum colNum ->
                     -- TODO (08 Dec 2019 sam): Update activeElement here
-                    ( Loaded (selectCell appData rowNum colNum), Cmd.none )
+                    let
+                        updatedAppData =
+                            { appData | activeElement = CrosswordElement }
+                    in
+                    ( Loaded (selectCell updatedAppData rowNum colNum), Cmd.none )
 
                 ClueClicked clueIndex ->
                     -- TODO (08 Dec 2019 sam): Update activeElement here
-                    ( Loaded (setActiveClue appData clueIndex), Cmd.none )
+                    let
+                        updatedAppData =
+                            { appData | activeElement = CluesElement }
+                    in
+                    ( Loaded (setActiveClue updatedAppData clueIndex), Cmd.none )
 
                 _ ->
                     ( Loaded appData, Cmd.none )
@@ -323,41 +333,60 @@ setActiveClue appData clueIndex =
 handleKeyInput : String -> AppData -> AppData
 handleKeyInput key appData =
     let
-        _ =
-            Debug.log "keyPressed" key
-
         keyInput =
             keyToKeyboardInput key
     in
-    -- TODO (08 Dec 2019 sam): Check activeElement
-    case keyInput of
-        ControlKey control ->
-            case control of
-                EnterKey ->
-                    toggleActiveClue appData
+    case appData.activeElement of
+        CrosswordElement ->
+            case keyInput of
+                ControlKey control ->
+                    case control of
+                        EnterKey ->
+                            toggleActiveClue appData
 
-                _ ->
+                        _ ->
+                            appData
+
+                ArrowKey arrow ->
+                    case arrow of
+                        ArrowKeyRight ->
+                            moveRight appData
+
+                        ArrowKeyLeft ->
+                            moveLeft appData
+
+                        ArrowKeyUp ->
+                            moveUp appData
+
+                        ArrowKeyDown ->
+                            moveDown appData
+
+                LetterKey letter ->
+                    changeActiveEntry appData letter
+
+                UnsupportedKey ->
                     appData
 
-        ArrowKey arrow ->
-            case arrow of
-                ArrowKeyRight ->
-                    moveRight appData
+        CluesElement ->
+            case appData.activeClueIndex of
+                Just clueIndex ->
+                    case keyInput of
+                        ArrowKey arrow ->
+                            case arrow of
+                                ArrowKeyUp ->
+                                    setActiveClue appData (clueIndex - 1)
 
-                ArrowKeyLeft ->
-                    moveLeft appData
+                                ArrowKeyDown ->
+                                    setActiveClue appData (clueIndex + 1)
 
-                ArrowKeyUp ->
-                    moveUp appData
+                                _ ->
+                                    appData
 
-                ArrowKeyDown ->
-                    moveDown appData
+                        _ ->
+                            appData
 
-        LetterKey letter ->
-            changeActiveEntry appData letter
-
-        UnsupportedKey ->
-            appData
+                Nothing ->
+                    appData
 
 
 selectCell : AppData -> Int -> Int -> AppData
@@ -548,11 +577,18 @@ decodeKeyboardInput =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
+        -- TODO (08 Dec 2019 sam): PreventDefauts somehow. Otherwise down arrow
+        -- leads to scrolling, and other such UX problems.
         [ Browser.Events.onKeyDown
             (map KeyPressed
                 (field "code" string)
             )
         ]
+
+
+alwaysPreventDefault : msg -> ( msg, Bool )
+alwaysPreventDefault msg =
+    ( msg, True )
 
 
 renderRow : List Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
@@ -781,7 +817,7 @@ renderClue clue clueIndex activeClueIndex clues =
         , onClick (ClueClicked clueIndex)
         ]
         [ strong [ class "cluegrid-clue-number" ] [ text (String.fromInt clue.gridNumber) ]
-        , text clue.clue_text
+        , text (unescape clue.clue_text)
         ]
 
 
