@@ -10982,7 +10982,7 @@ var $author$project$Main$directionFromString = function (dir) {
 			return $elm$json$Json$Decode$fail('Invalid direction ' + dir);
 	}
 };
-var $author$project$Main$direction = A2($elm$json$Json$Decode$andThen, $author$project$Main$directionFromString, $elm$json$Json$Decode$string);
+var $author$project$Main$decodeDirection = A2($elm$json$Json$Decode$andThen, $author$project$Main$directionFromString, $elm$json$Json$Decode$string);
 var $elm$json$Json$Decode$map6 = _Json_map6;
 var $author$project$Main$decodeClue = A7(
 	$elm$json$Json$Decode$map6,
@@ -10990,11 +10990,8 @@ var $author$project$Main$decodeClue = A7(
 	A2($elm$json$Json$Decode$field, 'start_col', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'start_row', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'direction', $author$project$Main$direction),
-	A2(
-		$elm$json$Json$Decode$field,
-		'number',
-		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
+	A2($elm$json$Json$Decode$field, 'direction', $author$project$Main$decodeDirection),
+	A2($elm$json$Json$Decode$field, 'number', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$map4 = _Json_map4;
 var $author$project$Main$parseJSON = A5(
@@ -11239,13 +11236,14 @@ var $author$project$Main$subscriptions = function (model) {
 					A2($elm$json$Json$Decode$field, 'code', $elm$json$Json$Decode$string)))
 			]));
 };
-var $author$project$Main$AppData = F3(
-	function (cluegridData, activeClueIndex, activeCell) {
-		return {activeCell: activeCell, activeClueIndex: activeClueIndex, cluegridData: cluegridData};
+var $author$project$Main$AppData = F4(
+	function (cluegridData, activeClueIndex, activeCell, activeElement) {
+		return {activeCell: activeCell, activeClueIndex: activeClueIndex, activeElement: activeElement, cluegridData: cluegridData};
 	});
+var $author$project$Main$CrosswordElement = {$: 'CrosswordElement'};
 var $author$project$Main$Failure = {$: 'Failure'};
-var $author$project$Main$Success = function (a) {
-	return {$: 'Success', a: a};
+var $author$project$Main$Loaded = function (a) {
+	return {$: 'Loaded', a: a};
 };
 var $author$project$Main$getCellFromRowCol = F2(
 	function (cells, _v0) {
@@ -11342,12 +11340,13 @@ var $author$project$Main$selectCell = F3(
 			_Utils_Tuple2(rowNum, colNum));
 		if (_v0.$ === 'Just') {
 			var cellAtRowCol = _v0.a;
-			return A3(
-				$author$project$Main$AppData,
-				appData.cluegridData,
-				A4($author$project$Main$updateActiveClue, appData.activeClueIndex, cellAtRowCol, appData.activeCell, appData.cluegridData.clues),
-				$elm$core$Maybe$Just(
-					_Utils_Tuple2(rowNum, colNum)));
+			return _Utils_update(
+				appData,
+				{
+					activeCell: $elm$core$Maybe$Just(
+						_Utils_Tuple2(rowNum, colNum)),
+					activeClueIndex: A4($author$project$Main$updateActiveClue, appData.activeClueIndex, cellAtRowCol, appData.activeCell, appData.cluegridData.clues)
+				});
 		} else {
 			return appData;
 		}
@@ -11371,12 +11370,12 @@ var $author$project$Main$moveCell = F4(
 					var cellAtRowCol = _v2.a;
 					if ($author$project$Main$crosswordCellisBlank(cellAtRowCol)) {
 						var $temp$originalAppData = originalAppData,
-							$temp$appData = A3(
-							$author$project$Main$AppData,
-							appData.cluegridData,
-							appData.activeClueIndex,
-							$elm$core$Maybe$Just(
-								_Utils_Tuple2(row + rowChange, col + colChange))),
+							$temp$appData = _Utils_update(
+							appData,
+							{
+								activeCell: $elm$core$Maybe$Just(
+									_Utils_Tuple2(row + rowChange, col + colChange))
+							}),
 							$temp$rowChange = rowChange,
 							$temp$colChange = colChange;
 						originalAppData = $temp$originalAppData;
@@ -11449,13 +11448,14 @@ var $author$project$Main$updateCellEntry = F3(
 			appData.cluegridData.grid);
 		var cluegridData = appData.cluegridData;
 		return $author$project$Main$moveNext(
-			A3(
+			A4(
 				$author$project$Main$AppData,
 				_Utils_update(
 					cluegridData,
 					{grid: newGrid}),
 				appData.activeClueIndex,
-				appData.activeCell));
+				appData.activeCell,
+				appData.activeElement));
 	});
 var $author$project$Main$changeActiveEntry = F2(
 	function (appData, letter) {
@@ -11538,102 +11538,133 @@ var $author$project$Main$toggleActiveClue = function (appData) {
 		return appData;
 	}
 };
-var $author$project$Main$update = F2(
-	function (msg, model) {
-		switch (msg.$) {
-			case 'FetchedData':
-				var data = msg.a;
-				if (data.$ === 'Ok') {
-					var cluegridData = data.a;
-					return _Utils_Tuple2(
-						$author$project$Main$Success(
-							A3($author$project$Main$AppData, cluegridData, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing)),
-						$elm$core$Platform$Cmd$none);
+var $author$project$Main$handleKeyInput = F2(
+	function (key, appData) {
+		var keyInput = $author$project$Main$keyToKeyboardInput(key);
+		var _v0 = A2($elm$core$Debug$log, 'keyPressed', key);
+		switch (keyInput.$) {
+			case 'ControlKey':
+				var control = keyInput.a;
+				if (control.$ === 'EnterKey') {
+					return $author$project$Main$toggleActiveClue(appData);
 				} else {
-					return _Utils_Tuple2($author$project$Main$Failure, $elm$core$Platform$Cmd$none);
+					return appData;
 				}
-			case 'CellClicked':
-				var rowNum = msg.a;
-				var colNum = msg.b;
-				switch (model.$) {
-					case 'Success':
-						var appData = model.a;
-						return _Utils_Tuple2(
-							$author$project$Main$Success(
-								A3($author$project$Main$selectCell, appData, rowNum, colNum)),
-							$elm$core$Platform$Cmd$none);
-					case 'Loading':
-						return _Utils_Tuple2($author$project$Main$Loading, $elm$core$Platform$Cmd$none);
+			case 'ArrowKey':
+				var arrow = keyInput.a;
+				switch (arrow.$) {
+					case 'ArrowKeyRight':
+						return $author$project$Main$moveRight(appData);
+					case 'ArrowKeyLeft':
+						return $author$project$Main$moveLeft(appData);
+					case 'ArrowKeyUp':
+						return $author$project$Main$moveUp(appData);
 					default:
-						return _Utils_Tuple2($author$project$Main$Failure, $elm$core$Platform$Cmd$none);
+						return $author$project$Main$moveDown(appData);
 				}
+			case 'LetterKey':
+				var letter = keyInput.a;
+				return A2($author$project$Main$changeActiveEntry, appData, letter);
 			default:
-				var key = msg.a;
-				var keyInput = $author$project$Main$keyToKeyboardInput(key);
-				var _v3 = A2($elm$core$Debug$log, 'keyPressed', key);
-				switch (model.$) {
-					case 'Success':
-						var appData = model.a;
-						switch (keyInput.$) {
-							case 'UnsupportedKey':
-								return _Utils_Tuple2(
-									$author$project$Main$Success(appData),
-									$elm$core$Platform$Cmd$none);
-							case 'ControlKey':
-								var control = keyInput.a;
-								if (control.$ === 'EnterKey') {
-									return _Utils_Tuple2(
-										$author$project$Main$Success(
-											$author$project$Main$toggleActiveClue(appData)),
-										$elm$core$Platform$Cmd$none);
-								} else {
-									return _Utils_Tuple2(
-										$author$project$Main$Success(appData),
-										$elm$core$Platform$Cmd$none);
-								}
-							case 'ArrowKey':
-								var arrow = keyInput.a;
-								switch (arrow.$) {
-									case 'ArrowKeyRight':
-										return _Utils_Tuple2(
-											$author$project$Main$Success(
-												$author$project$Main$moveRight(appData)),
-											$elm$core$Platform$Cmd$none);
-									case 'ArrowKeyLeft':
-										return _Utils_Tuple2(
-											$author$project$Main$Success(
-												$author$project$Main$moveLeft(appData)),
-											$elm$core$Platform$Cmd$none);
-									case 'ArrowKeyUp':
-										return _Utils_Tuple2(
-											$author$project$Main$Success(
-												$author$project$Main$moveUp(appData)),
-											$elm$core$Platform$Cmd$none);
-									default:
-										return _Utils_Tuple2(
-											$author$project$Main$Success(
-												$author$project$Main$moveDown(appData)),
-											$elm$core$Platform$Cmd$none);
-								}
-							default:
-								var letter = keyInput.a;
-								var _v8 = A2($elm$core$Debug$log, 'letter pressed', letter);
-								return _Utils_Tuple2(
-									$author$project$Main$Success(
-										A2($author$project$Main$changeActiveEntry, appData, letter)),
-									$elm$core$Platform$Cmd$none);
-						}
-					case 'Loading':
-						return _Utils_Tuple2($author$project$Main$Loading, $elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2($author$project$Main$Failure, $elm$core$Platform$Cmd$none);
-				}
+				return appData;
 		}
 	});
-var $author$project$Main$CellClicked = F2(
-	function (a, b) {
-		return {$: 'CellClicked', a: a, b: b};
+var $author$project$Main$setActiveClue = F2(
+	function (appData, clueIndex) {
+		var _v0 = A2(
+			$elm$core$Array$get,
+			clueIndex,
+			$elm$core$Array$fromList(appData.cluegridData.clues));
+		if (_v0.$ === 'Just') {
+			var clue = _v0.a;
+			var _v1 = A2(
+				$author$project$Main$getCellFromRowCol,
+				appData.cluegridData.grid,
+				_Utils_Tuple2(clue.startRow - 1, clue.startCol - 1));
+			if (_v1.$ === 'Just') {
+				var cell = _v1.a;
+				var _v2 = appData.activeClueIndex;
+				if (_v2.$ === 'Just') {
+					var index = _v2.a;
+					return _Utils_eq(index, clueIndex) ? appData : A3(
+						$author$project$Main$selectCell,
+						_Utils_update(
+							appData,
+							{
+								activeClueIndex: $elm$core$Maybe$Just(clueIndex)
+							}),
+						cell.row,
+						cell.col);
+				} else {
+					return A3(
+						$author$project$Main$selectCell,
+						_Utils_update(
+							appData,
+							{
+								activeClueIndex: $elm$core$Maybe$Just(clueIndex)
+							}),
+						cell.row,
+						cell.col);
+				}
+			} else {
+				return appData;
+			}
+		} else {
+			return appData;
+		}
 	});
+var $author$project$Main$update = F2(
+	function (msg, model) {
+		switch (model.$) {
+			case 'Loading':
+				if (msg.$ === 'FetchedData') {
+					var data = msg.a;
+					if (data.$ === 'Ok') {
+						var cluegridData = data.a;
+						return _Utils_Tuple2(
+							$author$project$Main$Loaded(
+								A4($author$project$Main$AppData, cluegridData, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, $author$project$Main$CrosswordElement)),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						return _Utils_Tuple2($author$project$Main$Failure, $elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2($author$project$Main$Loading, $elm$core$Platform$Cmd$none);
+				}
+			case 'Loaded':
+				var appData = model.a;
+				switch (msg.$) {
+					case 'KeyPressed':
+						var key = msg.a;
+						return _Utils_Tuple2(
+							$author$project$Main$Loaded(
+								A2($author$project$Main$handleKeyInput, key, appData)),
+							$elm$core$Platform$Cmd$none);
+					case 'CellClicked':
+						var rowNum = msg.a;
+						var colNum = msg.b;
+						return _Utils_Tuple2(
+							$author$project$Main$Loaded(
+								A3($author$project$Main$selectCell, appData, rowNum, colNum)),
+							$elm$core$Platform$Cmd$none);
+					case 'ClueClicked':
+						var clueIndex = msg.a;
+						return _Utils_Tuple2(
+							$author$project$Main$Loaded(
+								A2($author$project$Main$setActiveClue, appData, clueIndex)),
+							$elm$core$Platform$Cmd$none);
+					default:
+						return _Utils_Tuple2(
+							$author$project$Main$Loaded(appData),
+							$elm$core$Platform$Cmd$none);
+				}
+			default:
+				return _Utils_Tuple2($author$project$Main$Failure, $elm$core$Platform$Cmd$none);
+		}
+	});
+var $author$project$Main$ClueClicked = function (a) {
+	return {$: 'ClueClicked', a: a};
+};
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -11655,6 +11686,93 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
+var $author$project$Main$isActiveClue = F3(
+	function (clue, activeClueIndex, clues) {
+		if (activeClueIndex.$ === 'Just') {
+			var index = activeClueIndex.a;
+			var _v1 = A2(
+				$elm$core$Array$get,
+				index,
+				$elm$core$Array$fromList(clues));
+			if (_v1.$ === 'Just') {
+				var activeClue = _v1.a;
+				return (_Utils_eq(activeClue.clue_text, clue.clue_text) && _Utils_eq(activeClue.gridNumber, clue.gridNumber)) ? true : false;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+var $elm$html$Html$strong = _VirtualDom_node('strong');
+var $author$project$Main$renderClue = F4(
+	function (clue, clueIndex, activeClueIndex, clues) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('cluegrid-clue', true),
+							_Utils_Tuple2(
+							'cluegrid-clue-is-active',
+							A3($author$project$Main$isActiveClue, clue, activeClueIndex, clues))
+						])),
+					$elm$html$Html$Events$onClick(
+					$author$project$Main$ClueClicked(clueIndex))
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$strong,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-clue-number')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							$elm$core$String$fromInt(clue.gridNumber))
+						])),
+					$elm$html$Html$text(clue.clue_text)
+				]));
+	});
+var $author$project$Main$renderCluesData = F2(
+	function (clues, activeClueIndex) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('cluegrid-clues-container')
+				]),
+			A2(
+				$elm$core$List$append,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$strong,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-clues-header')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('CLUES')
+							]))
+					]),
+				A2(
+					$elm$core$List$indexedMap,
+					F2(
+						function (index, clue) {
+							return A4($author$project$Main$renderClue, clue, index, activeClueIndex, clues);
+						}),
+					clues)));
+	});
+var $author$project$Main$CellClicked = F2(
+	function (a, b) {
+		return {$: 'CellClicked', a: a, b: b};
+	});
 var $author$project$Main$isActiveCell = F2(
 	function (cell, activeCell) {
 		if (activeCell.$ === 'Just') {
@@ -11700,15 +11818,15 @@ var $author$project$Main$renderCell = F3(
 					$elm$html$Html$Attributes$classList(
 					_List_fromArray(
 						[
-							_Utils_Tuple2('crossword-cell', true),
+							_Utils_Tuple2('cluegrid-crossword-cell', true),
 							_Utils_Tuple2(
-							'crossword-cell-is-blank',
+							'cluegrid-crossword-cell-is-blank',
 							$author$project$Main$crosswordCellisBlank(cell)),
 							_Utils_Tuple2(
-							'crossword-cell-is-active',
+							'cluegrid-crossword-cell-is-active',
 							A2($author$project$Main$isActiveCell, cell, activeCell)),
 							_Utils_Tuple2(
-							'crossword-cell-is-active-clue',
+							'cluegrid-crossword-cell-is-active-clue',
 							A2($author$project$Main$isActiveCellClue, cell, activeClueIndex))
 						])),
 					$elm$html$Html$Events$onClick(
@@ -11723,7 +11841,7 @@ var $author$project$Main$renderCell = F3(
 							$elm$html$Html$Attributes$classList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('crossword-cell-grid-number', true)
+									_Utils_Tuple2('cluegrid-crossword-cell-grid-number', true)
 								]))
 						]),
 					_List_fromArray(
@@ -11743,7 +11861,7 @@ var $author$project$Main$renderCell = F3(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('crossword-cell-solution')
+							$elm$html$Html$Attributes$class('cluegrid-crossword-cell-solution')
 						]),
 					_List_fromArray(
 						[
@@ -11766,7 +11884,7 @@ var $author$project$Main$renderRow = F3(
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$class('crossword-row')
+					$elm$html$Html$Attributes$class('cluegrid-crossword-row')
 				]),
 			A2(
 				$elm$core$List$map,
@@ -11780,18 +11898,28 @@ var $author$project$Main$renderAppData = function (appData) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('crossword-container')
+				$elm$html$Html$Attributes$class('cluegrid-container')
 			]),
-		A2(
-			$elm$core$List$map,
-			function (row) {
-				return A3($author$project$Main$renderRow, row, appData.activeClueIndex, appData.activeCell);
-			},
-			appData.cluegridData.grid));
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('cluegrid-crossword-container')
+					]),
+				A2(
+					$elm$core$List$map,
+					function (row) {
+						return A3($author$project$Main$renderRow, row, appData.activeClueIndex, appData.activeCell);
+					},
+					appData.cluegridData.grid)),
+				A2($author$project$Main$renderCluesData, appData.cluegridData.clues, appData.activeClueIndex)
+			]));
 };
 var $author$project$Main$view = function (model) {
 	switch (model.$) {
-		case 'Success':
+		case 'Loaded':
 			var appData = model.a;
 			return $author$project$Main$renderAppData(appData);
 		case 'Failure':
@@ -11799,7 +11927,7 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('crossword-container')
+						$elm$html$Html$Attributes$class('cluegrid-container')
 					]),
 				_List_fromArray(
 					[
@@ -11810,7 +11938,7 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('crossword-container')
+						$elm$html$Html$Attributes$class('cluegrid-container')
 					]),
 				_List_fromArray(
 					[
@@ -11821,4 +11949,4 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Cell":{"args":[],"type":"{ solution : String.String, row : Basics.Int, col : Basics.Int, gridNumber : Maybe.Maybe Basics.Int, acrossClueIndex : Maybe.Maybe Basics.Int, downClueIndex : Maybe.Maybe Basics.Int, entry : Maybe.Maybe String.String }"},"Main.Clue":{"args":[],"type":"{ startCol : Basics.Int, startRow : Basics.Int, solution : String.String, direction : Main.ClueDirection, gridNumber : Maybe.Maybe Basics.Int, clue_text : String.String }"},"Main.CluegridData":{"args":[],"type":"{ clues : List.List Main.Clue, grid : List.List (List.List Main.Cell), size : Main.CluegridSize, info : Main.CluegridInfo }"},"Main.CluegridInfo":{"args":[],"type":"{ date : String.String, title : String.String, author : String.String, editor : String.String, copyright : String.String }"},"Main.CluegridSize":{"args":[],"type":"{ rows : Basics.Int, cols : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchedData":["Result.Result Http.Error Main.CluegridData"],"CellClicked":["Basics.Int","Basics.Int"],"KeyPressed":["String.String"]}},"Main.ClueDirection":{"args":[],"tags":{"Across":[],"Down":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Cell":{"args":[],"type":"{ solution : String.String, row : Basics.Int, col : Basics.Int, gridNumber : Maybe.Maybe Basics.Int, acrossClueIndex : Maybe.Maybe Basics.Int, downClueIndex : Maybe.Maybe Basics.Int, entry : Maybe.Maybe String.String }"},"Main.Clue":{"args":[],"type":"{ startCol : Basics.Int, startRow : Basics.Int, solution : String.String, direction : Main.ClueDirection, gridNumber : Basics.Int, clue_text : String.String }"},"Main.CluegridData":{"args":[],"type":"{ clues : List.List Main.Clue, grid : List.List (List.List Main.Cell), size : Main.CluegridSize, info : Main.CluegridInfo }"},"Main.CluegridInfo":{"args":[],"type":"{ date : String.String, title : String.String, author : String.String, editor : String.String, copyright : String.String }"},"Main.CluegridSize":{"args":[],"type":"{ rows : Basics.Int, cols : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchedData":["Result.Result Http.Error Main.CluegridData"],"CellClicked":["Basics.Int","Basics.Int"],"KeyPressed":["String.String"],"ClueClicked":["Basics.Int"]}},"Main.ClueDirection":{"args":[],"tags":{"Across":[],"Down":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));

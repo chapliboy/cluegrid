@@ -12,6 +12,7 @@ import Html
         , li
         , p
         , pre
+        , strong
         , text
         )
 import Html.Attributes
@@ -107,8 +108,8 @@ type ClueDirection
     | Down
 
 
-direction : Decoder ClueDirection
-direction =
+decodeDirection : Decoder ClueDirection
+decodeDirection =
     string |> andThen directionFromString
 
 
@@ -145,7 +146,7 @@ type alias Clue =
     , startRow : Int
     , solution : String
     , direction : ClueDirection
-    , gridNumber : Maybe Int
+    , gridNumber : Int
     , clue_text : String
     }
 
@@ -156,9 +157,14 @@ decodeClue =
         (field "start_col" int)
         (field "start_row" int)
         (field "solution" string)
-        (field "direction" direction)
-        (field "number" (nullable int))
+        (field "direction" decodeDirection)
+        (field "number" int)
         (field "text" string)
+
+
+type CluegridElement
+    = CrosswordElement
+    | CluesElement
 
 
 type alias CluegridData =
@@ -173,13 +179,14 @@ type alias AppData =
     { cluegridData : CluegridData
     , activeClueIndex : Maybe Int
     , activeCell : Maybe ( Int, Int )
+    , activeElement : CluegridElement
     }
 
 
 type Model
     = Loading
     | Failure
-    | Success AppData
+    | Loaded AppData
 
 
 init : () -> ( Model, Cmd Msg )
@@ -216,6 +223,7 @@ type Msg
     = FetchedData (Result Http.Error CluegridData)
     | CellClicked Int Int
     | KeyPressed String
+    | ClueClicked Int
 
 
 parseJSON : Decoder CluegridData
@@ -242,89 +250,129 @@ parseJSON =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        FetchedData data ->
-            case data of
-                Ok cluegridData ->
-                    ( Success (AppData cluegridData Nothing Nothing), Cmd.none )
+    case model of
+        Loading ->
+            case msg of
+                FetchedData data ->
+                    case data of
+                        Ok cluegridData ->
+                            ( Loaded (AppData cluegridData Nothing Nothing CrosswordElement), Cmd.none )
 
-                Err _ ->
-                    ( Failure, Cmd.none )
+                        Err _ ->
+                            ( Failure, Cmd.none )
 
-        CellClicked rowNum colNum ->
-            case model of
-                Success appData ->
-                    ( Success (selectCell appData rowNum colNum), Cmd.none )
-
-                Loading ->
+                _ ->
                     ( Loading, Cmd.none )
 
-                Failure ->
-                    ( Failure, Cmd.none )
+        Loaded appData ->
+            case msg of
+                KeyPressed key ->
+                    ( Loaded (handleKeyInput key appData), Cmd.none )
 
-        KeyPressed key ->
-            let
-                _ =
-                    Debug.log "keyPressed" key
+                CellClicked rowNum colNum ->
+                    -- TODO (08 Dec 2019 sam): Update activeElement here
+                    ( Loaded (selectCell appData rowNum colNum), Cmd.none )
 
-                keyInput =
-                    keyToKeyboardInput key
-            in
-            case model of
-                Success appData ->
-                    case keyInput of
-                        UnsupportedKey ->
-                            ( Success appData, Cmd.none )
+                ClueClicked clueIndex ->
+                    -- TODO (08 Dec 2019 sam): Update activeElement here
+                    ( Loaded (setActiveClue appData clueIndex), Cmd.none )
 
-                        ControlKey control ->
-                            case control of
-                                EnterKey ->
-                                    ( Success (toggleActiveClue appData), Cmd.none )
+                _ ->
+                    ( Loaded appData, Cmd.none )
 
-                                _ ->
-                                    ( Success appData, Cmd.none )
+        Failure ->
+            ( Failure, Cmd.none )
 
-                        ArrowKey arrow ->
-                            case arrow of
-                                ArrowKeyRight ->
-                                    ( Success (moveRight appData), Cmd.none )
 
-                                ArrowKeyLeft ->
-                                    ( Success (moveLeft appData), Cmd.none )
+setActiveClue : AppData -> Int -> AppData
+setActiveClue appData clueIndex =
+    case Array.get clueIndex (Array.fromList appData.cluegridData.clues) of
+        Just clue ->
+            case
+                getCellFromRowCol
+                    appData.cluegridData.grid
+                    ( clue.startRow - 1, clue.startCol - 1 )
+            of
+                Just cell ->
+                    case appData.activeClueIndex of
+                        Just index ->
+                            if index == clueIndex then
+                                appData
 
-                                ArrowKeyUp ->
-                                    ( Success (moveUp appData), Cmd.none )
+                            else
+                                selectCell
+                                    { appData | activeClueIndex = Just clueIndex }
+                                    cell.row
+                                    cell.col
 
-                                ArrowKeyDown ->
-                                    ( Success (moveDown appData), Cmd.none )
+                        Nothing ->
+                            -- TODO (08 Dec 2019 sam): See how this code-duplication
+                            -- can be eliminated
+                            selectCell
+                                { appData | activeClueIndex = Just clueIndex }
+                                cell.row
+                                cell.col
 
-                        LetterKey letter ->
-                            let
-                                _ =
-                                    Debug.log "letter pressed" letter
-                            in
-                            ( Success (changeActiveEntry appData letter), Cmd.none )
+                Nothing ->
+                    appData
 
-                Loading ->
-                    ( Loading, Cmd.none )
+        Nothing ->
+            appData
 
-                Failure ->
-                    ( Failure, Cmd.none )
+
+handleKeyInput : String -> AppData -> AppData
+handleKeyInput key appData =
+    let
+        _ =
+            Debug.log "keyPressed" key
+
+        keyInput =
+            keyToKeyboardInput key
+    in
+    -- TODO (08 Dec 2019 sam): Check activeElement
+    case keyInput of
+        ControlKey control ->
+            case control of
+                EnterKey ->
+                    toggleActiveClue appData
+
+                _ ->
+                    appData
+
+        ArrowKey arrow ->
+            case arrow of
+                ArrowKeyRight ->
+                    moveRight appData
+
+                ArrowKeyLeft ->
+                    moveLeft appData
+
+                ArrowKeyUp ->
+                    moveUp appData
+
+                ArrowKeyDown ->
+                    moveDown appData
+
+        LetterKey letter ->
+            changeActiveEntry appData letter
+
+        UnsupportedKey ->
+            appData
 
 
 selectCell : AppData -> Int -> Int -> AppData
 selectCell appData rowNum colNum =
     case getCellFromRowCol appData.cluegridData.grid ( rowNum, colNum ) of
         Just cellAtRowCol ->
-            AppData
-                appData.cluegridData
-                (updateActiveClue
-                    appData.activeClueIndex
-                    cellAtRowCol
-                    appData.activeCell
-                    appData.cluegridData.clues
-                )
-                (Just ( rowNum, colNum ))
+            { appData
+                | activeClueIndex =
+                    updateActiveClue
+                        appData.activeClueIndex
+                        cellAtRowCol
+                        appData.activeCell
+                        appData.cluegridData.clues
+                , activeCell = Just ( rowNum, colNum )
+            }
 
         Nothing ->
             appData
@@ -385,10 +433,13 @@ updateCellEntry cellToUpdate letter appData =
             appData.cluegridData
     in
     moveNext
+        -- TODO (08 Dec 2019 sam): See how to update nested record like this.
+        -- {appData | cluegridData.grid = newGrid }
         (AppData
             { cluegridData | grid = newGrid }
             appData.activeClueIndex
             appData.activeCell
+            appData.activeElement
         )
 
 
@@ -404,10 +455,10 @@ moveCell originalAppData appData rowChange colChange =
                     if crosswordCellisBlank cellAtRowCol then
                         moveCell
                             originalAppData
-                            (AppData appData.cluegridData
-                                appData.activeClueIndex
-                                (Just ( row + rowChange, col + colChange ))
-                            )
+                            { appData
+                                | activeCell =
+                                    Just ( row + rowChange, col + colChange )
+                            }
                             rowChange
                             colChange
 
@@ -504,15 +555,10 @@ subscriptions model =
         ]
 
 
-renderClue : Clue -> Html Msg
-renderClue clue =
-    div [] [ text clue.clue_text ]
-
-
 renderRow : List Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
 renderRow row activeClueIndex activeCell =
     div
-        [ class "crossword-row" ]
+        [ class "cluegrid-crossword-row" ]
         (List.map (\cell -> renderCell cell activeClueIndex activeCell)
             row
         )
@@ -669,16 +715,16 @@ renderCell : Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
 renderCell cell activeClueIndex activeCell =
     div
         [ classList
-            [ ( "crossword-cell", True )
-            , ( "crossword-cell-is-blank", crosswordCellisBlank cell )
-            , ( "crossword-cell-is-active", isActiveCell cell activeCell )
-            , ( "crossword-cell-is-active-clue", isActiveCellClue cell activeClueIndex )
+            [ ( "cluegrid-crossword-cell", True )
+            , ( "cluegrid-crossword-cell-is-blank", crosswordCellisBlank cell )
+            , ( "cluegrid-crossword-cell-is-active", isActiveCell cell activeCell )
+            , ( "cluegrid-crossword-cell-is-active-clue", isActiveCellClue cell activeClueIndex )
             ]
         , onClick (CellClicked cell.row cell.col)
         ]
         [ div
             [ classList
-                [ ( "crossword-cell-grid-number", True )
+                [ ( "cluegrid-crossword-cell-grid-number", True )
                 ]
             ]
             [ text
@@ -690,7 +736,7 @@ renderCell cell activeClueIndex activeCell =
                         ""
                 )
             ]
-        , div [ class "crossword-cell-solution" ]
+        , div [ class "cluegrid-crossword-cell-solution" ]
             [ text
                 (case cell.entry of
                     Just entry ->
@@ -703,34 +749,78 @@ renderCell cell activeClueIndex activeCell =
         ]
 
 
-onKeyUp : (Int -> msg) -> Html.Attribute msg
-onKeyUp tagger =
-    on "keyup" (map tagger keyCode)
+isActiveClue : Clue -> Maybe Int -> List Clue -> Bool
+isActiveClue clue activeClueIndex clues =
+    case activeClueIndex of
+        Just index ->
+            case Array.get index (Array.fromList clues) of
+                Just activeClue ->
+                    if
+                        (activeClue.clue_text == clue.clue_text)
+                            && (activeClue.gridNumber == clue.gridNumber)
+                    then
+                        True
+
+                    else
+                        False
+
+                Nothing ->
+                    False
+
+        Nothing ->
+            False
+
+
+renderClue : Clue -> Int -> Maybe Int -> List Clue -> Html Msg
+renderClue clue clueIndex activeClueIndex clues =
+    div
+        [ classList
+            [ ( "cluegrid-clue", True )
+            , ( "cluegrid-clue-is-active", isActiveClue clue activeClueIndex clues )
+            ]
+        , onClick (ClueClicked clueIndex)
+        ]
+        [ strong [ class "cluegrid-clue-number" ] [ text (String.fromInt clue.gridNumber) ]
+        , text clue.clue_text
+        ]
+
+
+renderCluesData : List Clue -> Maybe Int -> Html Msg
+renderCluesData clues activeClueIndex =
+    div
+        [ class "cluegrid-clues-container" ]
+        (List.append
+            [ strong [ class "cluegrid-clues-header" ] [ text "CLUES" ] ]
+            (List.indexedMap (\index clue -> renderClue clue index activeClueIndex clues) clues)
+        )
 
 
 renderAppData : AppData -> Html Msg
 renderAppData appData =
-    div
-        [ class "crossword-container"
+    div [ class "cluegrid-container" ]
+        [ div
+            [ class "cluegrid-crossword-container"
+            ]
+            (List.map
+                (\row -> renderRow row appData.activeClueIndex appData.activeCell)
+                appData.cluegridData.grid
+            )
+        , renderCluesData appData.cluegridData.clues appData.activeClueIndex
         ]
-        (List.map
-            (\row -> renderRow row appData.activeClueIndex appData.activeCell)
-            appData.cluegridData.grid
-        )
 
 
 view : Model -> Html Msg
 view model =
     case model of
-        Success appData ->
+        Loaded appData ->
             renderAppData appData
 
         Failure ->
             div
-                [ class "crossword-container" ]
+                [ class "cluegrid-container" ]
                 [ text "Could not fetch data ‾\\_(ツ)_/‾" ]
 
         Loading ->
             div
-                [ class "crossword-container" ]
+                [ class "cluegrid-container" ]
                 [ text "loading data..." ]
