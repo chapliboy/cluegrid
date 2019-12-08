@@ -277,7 +277,12 @@ update msg model =
                             ( Success appData, Cmd.none )
 
                         ControlKey control ->
-                            ( Success appData, Cmd.none )
+                            case control of
+                                EnterKey ->
+                                    ( Success (toggleActiveClue appData), Cmd.none )
+
+                                _ ->
+                                    ( Success appData, Cmd.none )
 
                         ArrowKey arrow ->
                             case arrow of
@@ -320,6 +325,16 @@ selectCell appData rowNum colNum =
                     appData.cluegridData.clues
                 )
                 (Just ( rowNum, colNum ))
+
+        Nothing ->
+            appData
+
+
+toggleActiveClue : AppData -> AppData
+toggleActiveClue appData =
+    case appData.activeCell of
+        Just ( row, col ) ->
+            selectCell appData row col
 
         Nothing ->
             appData
@@ -464,6 +479,9 @@ keyToKeyboardInput code =
 
     else if String.startsWith "Key" code then
         LetterKey (String.slice 3 4 code)
+
+    else if code == "Enter" then
+        ControlKey EnterKey
 
     else
         UnsupportedKey

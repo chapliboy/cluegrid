@@ -11485,6 +11485,10 @@ var $author$project$Main$ArrowKeyDown = {$: 'ArrowKeyDown'};
 var $author$project$Main$ArrowKeyLeft = {$: 'ArrowKeyLeft'};
 var $author$project$Main$ArrowKeyRight = {$: 'ArrowKeyRight'};
 var $author$project$Main$ArrowKeyUp = {$: 'ArrowKeyUp'};
+var $author$project$Main$ControlKey = function (a) {
+	return {$: 'ControlKey', a: a};
+};
+var $author$project$Main$EnterKey = {$: 'EnterKey'};
 var $author$project$Main$LetterKey = function (a) {
 	return {$: 'LetterKey', a: a};
 };
@@ -11508,7 +11512,11 @@ var $author$project$Main$keyToKeyboardInput = function (code) {
 			return $author$project$Main$LetterKey(
 				A3($elm$core$String$slice, 3, 4, code));
 		} else {
-			return $author$project$Main$UnsupportedKey;
+			if (code === 'Enter') {
+				return $author$project$Main$ControlKey($author$project$Main$EnterKey);
+			} else {
+				return $author$project$Main$UnsupportedKey;
+			}
 		}
 	}
 };
@@ -11518,6 +11526,17 @@ var $author$project$Main$moveLeft = function (appData) {
 };
 var $author$project$Main$moveUp = function (appData) {
 	return A4($author$project$Main$moveCell, appData, appData, -1, 0);
+};
+var $author$project$Main$toggleActiveClue = function (appData) {
+	var _v0 = appData.activeCell;
+	if (_v0.$ === 'Just') {
+		var _v1 = _v0.a;
+		var row = _v1.a;
+		var col = _v1.b;
+		return A3($author$project$Main$selectCell, appData, row, col);
+	} else {
+		return appData;
+	}
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -11562,9 +11581,16 @@ var $author$project$Main$update = F2(
 									$elm$core$Platform$Cmd$none);
 							case 'ControlKey':
 								var control = keyInput.a;
-								return _Utils_Tuple2(
-									$author$project$Main$Success(appData),
-									$elm$core$Platform$Cmd$none);
+								if (control.$ === 'EnterKey') {
+									return _Utils_Tuple2(
+										$author$project$Main$Success(
+											$author$project$Main$toggleActiveClue(appData)),
+										$elm$core$Platform$Cmd$none);
+								} else {
+									return _Utils_Tuple2(
+										$author$project$Main$Success(appData),
+										$elm$core$Platform$Cmd$none);
+								}
 							case 'ArrowKey':
 								var arrow = keyInput.a;
 								switch (arrow.$) {
@@ -11591,7 +11617,7 @@ var $author$project$Main$update = F2(
 								}
 							default:
 								var letter = keyInput.a;
-								var _v7 = A2($elm$core$Debug$log, 'letter pressed', letter);
+								var _v8 = A2($elm$core$Debug$log, 'letter pressed', letter);
 								return _Utils_Tuple2(
 									$author$project$Main$Success(
 										A2($author$project$Main$changeActiveEntry, appData, letter)),
