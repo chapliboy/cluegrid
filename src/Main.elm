@@ -27,6 +27,7 @@ import Html.Events
         , on
         , onClick
         , preventDefaultOn
+        , stopPropagationOn
         )
 import Http
 import Json.Decode
@@ -579,6 +580,7 @@ decodeKeyboardInput =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
+    {--
     Sub.batch
         -- TODO (08 Dec 2019 sam): PreventDefauts somehow. Otherwise down arrow
         -- leads to scrolling, and other such UX problems.
@@ -587,6 +589,8 @@ subscriptions model =
                 (field "code" string)
             )
         ]
+    --}
+    Sub.none
 
 
 alwaysPreventDefault : msg -> ( msg, Bool )
@@ -845,9 +849,27 @@ renderCluesData clues activeClueIndex =
         )
 
 
+alwaysStopPropagation : Msg -> ( Msg, Bool )
+alwaysStopPropagation msg =
+    ( msg, False )
+
+
+dontScroll : Msg -> Html.Attribute Msg
+dontScroll msg =
+    preventDefaultOn "keydown" (map alwaysStopPropagation (succeed msg))
+
+
+onKeyDown : msg -> Html.Attribute msg
+onKeyDown msg =
+    on "keydown" (succeed msg)
+
+
 renderAppData : AppData -> Html Msg
 renderAppData appData =
-    div [ class "cluegrid-container" ]
+    div
+        [ class "cluegrid-container"
+        , onKeyDown (KeyPressed "ArrowDown")
+        ]
         [ div
             [ class "cluegrid-crossword-container"
             ]
