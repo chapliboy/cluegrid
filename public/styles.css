@@ -14,6 +14,12 @@ body {
   --cell-size: calc( (var(--app-height)/15) - 8px);
 }
 
+.cluegrid-data-not-loaded {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ffffff99;
+}
+
 .cluegrid-container {
   height: var(--app-height);
   width: var(--app-width);
