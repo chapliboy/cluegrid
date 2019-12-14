@@ -3,17 +3,33 @@ body {
   font-weight: 300;
 }
 
-.cluegrid-container {
+.cluegrid-fullscreen-container {
   height: 100vh;
   background: linear-gradient(120deg, #3be8b0dd, #1aafd0dd, #6a67cedd);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  --app-height: 85vh;
+  --app-width: 85vw;
+  --cell-size: calc( (var(--app-height)/15) - 8px);
+}
+
+.cluegrid-container {
+  height: var(--app-height);
+  width: var(--app-width);
   display: flex;
 }
 
 .cluegrid-crossword-container {
 }
 
+/* TODO (13 Dec 2019 sam): A lot of these settings will have to be changed to use
+ * vh or something, as this behaves very badly for different screen resolutions.
+ */
+
 .cluegrid-clues-container {
-  width: 30vw;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -25,13 +41,20 @@ body {
   font-weight: 900;
   margin: 1rem;
   margin-bottom: 0.2rem;
+  margin-top: 0;
   padding-top: 0.2rem;
   padding-bottom: 0.2rem;
   font-size: 1.4rem;
   border-radius: 0.6rem;
 }
 
+.cluegrid-clues-cluelist {
+  height: 100%;
+  overflow-y: scroll;
+}
+
 .cluegrid-clue {
+  min-height: calc (0.8 ** var(--cell-size));
   background-color: #ffffff99;
   border-radius: 0.6rem;
   padding: 1rem;
@@ -49,16 +72,24 @@ body {
   background-color: #ccccff99;
 }
 
+.cluegrid-clue-spacer {
+  width: 1rem;
+}
+
 .cluegrid-clue-number {
   font-weight: 900;
-  width: 1.5em;
+  color: #555;
 }
 
 .cluegrid-clue-direction {
   font-weight: 900;
-  width: 4em;
+  color: #555;
 }
 .cluegrid-clue-text {
+  flex-grow: 1;
+}
+
+.cluegrid-clue-current-solution {
 }
 
 .cluegrid-crossword-row {
@@ -70,9 +101,10 @@ body {
   background-color: #ffffff99;
   border-radius: 0.6rem;
   position: relative;
+  border: 2px solid #ffffff00;
   margin: 2px;
-  height: 3rem;
-  width: 3rem;
+  height: var(--cell-size);
+  width: var(--cell-size);
   text-align: center;
   color: #555;
 }
@@ -96,10 +128,10 @@ body {
 }
 
 .cluegrid-crossword-cell-is-active-clue {
-  /* background-color: #ffff4499; */
   background-color: #ccccff99;
 }
 
 .cluegrid-crossword-cell-is-active {
-  background-color: #ffaaff99;
+  background-color: #ccccff99;
+  border: 2px solid #ffffff99;
 }
