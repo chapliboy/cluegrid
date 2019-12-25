@@ -6714,13 +6714,6 @@ var $author$project$Controls$keyToKeyboardInput = function (code) {
 		}
 	}
 };
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Controls$noCmdLoaded = function (appData) {
-	return _Utils_Tuple2(
-		$author$project$Datatypes$Loaded(appData),
-		$elm$core$Platform$Cmd$none);
-};
 var $elm$core$Basics$modBy = _Basics_modBy;
 var $author$project$Controls$setActiveClue = F2(
 	function (appData, clueIndex) {
@@ -6788,10 +6781,80 @@ var $author$project$Controls$selectNextClue = function (appData) {
 var $author$project$Controls$selectPreviousClue = function (appData) {
 	return A2($author$project$Controls$changeClueIndex, appData, -1);
 };
+var $author$project$Datatypes$SetScroll = {$: 'SetScroll'};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$core$Task$onError = _Scheduler_onError;
+var $elm$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return $elm$core$Task$command(
+			$elm$core$Task$Perform(
+				A2(
+					$elm$core$Task$onError,
+					A2(
+						$elm$core$Basics$composeL,
+						A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+						$elm$core$Result$Err),
+					A2(
+						$elm$core$Task$andThen,
+						A2(
+							$elm$core$Basics$composeL,
+							A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+							$elm$core$Result$Ok),
+						task))));
+	});
+var $author$project$Clue$getClueId = function (index) {
+	return 'cluegrid-clue-number-' + $elm$core$String$fromInt(index);
+};
+var $elm$browser$Browser$Dom$getElement = _Browser_getElement;
+var $elm$browser$Browser$Dom$getViewportOf = _Browser_getViewportOf;
+var $elm$browser$Browser$Dom$setViewportOf = _Browser_setViewportOf;
+var $author$project$Controls$scrollToClue = function (appData) {
+	var clueIndex = function () {
+		var _v1 = appData.activeClueIndex;
+		if (_v1.$ === 'Just') {
+			var index = _v1.a;
+			return index;
+		} else {
+			return 0;
+		}
+	}();
+	return A2(
+		$elm$core$Task$attempt,
+		function (_v0) {
+			return $author$project$Datatypes$SetScroll;
+		},
+		A2(
+			$elm$core$Task$andThen,
+			function (clue) {
+				return A2(
+					$elm$core$Task$andThen,
+					function (scrollAreaElement) {
+						return A2(
+							$elm$core$Task$andThen,
+							function (scrollAreaViewport) {
+								return A3($elm$browser$Browser$Dom$setViewportOf, 'cluegrid-clues-scrollable-area', 0, (scrollAreaViewport.viewport.y + clue.element.y) - scrollAreaElement.element.y);
+							},
+							$elm$browser$Browser$Dom$getViewportOf('cluegrid-clues-scrollable-area'));
+					},
+					$elm$browser$Browser$Dom$getElement('cluegrid-clues-scrollable-area'));
+			},
+			$elm$browser$Browser$Dom$getElement(
+				$author$project$Clue$getClueId(clueIndex))));
+};
+var $author$project$Controls$sendScrollToClue = function (appData) {
+	return _Utils_Tuple2(
+		$author$project$Datatypes$Loaded(appData),
+		$author$project$Controls$scrollToClue(appData));
+};
 var $author$project$Datatypes$CellUpdateData = F3(
 	function (row, col, letter) {
 		return {col: col, letter: letter, row: row};
 	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
@@ -6829,7 +6892,12 @@ var $author$project$Controls$sendUpdateData = F4(
 		var cellUpdateData = A3($author$project$Datatypes$CellUpdateData, row, col, letter);
 		return _Utils_Tuple2(
 			$author$project$Datatypes$Loaded(appData),
-			$author$project$Controls$sendCellUpdate(cellUpdateData));
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						$author$project$Controls$sendCellUpdate(cellUpdateData),
+						$author$project$Controls$scrollToClue(appData)
+					])));
 	});
 var $author$project$Controls$toggleActiveClue = function (appData) {
 	var _v0 = appData.activeCell;
@@ -6850,34 +6918,34 @@ var $author$project$Controls$handleKeyInput = F2(
 				var control = keyInput.a;
 				switch (control.$) {
 					case 'EnterKey':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$toggleActiveClue(appData));
 					case 'BackspaceKey':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							A2($author$project$Controls$changeActiveEntry, appData, $elm$core$Maybe$Nothing));
 					case 'TabKey':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$selectNextClue(appData));
 					case 'ShiftTabKey':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$selectPreviousClue(appData));
 					default:
-						return $author$project$Controls$noCmdLoaded(appData);
+						return $author$project$Controls$sendScrollToClue(appData);
 				}
 			case 'ArrowKey':
 				var arrow = keyInput.a;
 				switch (arrow.$) {
 					case 'ArrowKeyRight':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$moveRight(appData));
 					case 'ArrowKeyLeft':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$moveLeft(appData));
 					case 'ArrowKeyUp':
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$moveUp(appData));
 					default:
-						return $author$project$Controls$noCmdLoaded(
+						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$moveDown(appData));
 				}
 			case 'LetterKey':
@@ -6905,9 +6973,10 @@ var $author$project$Controls$handleKeyInput = F2(
 						appData,
 						$elm$core$Maybe$Just(letter)));
 			default:
-				return $author$project$Controls$noCmdLoaded(appData);
+				return $author$project$Controls$sendScrollToClue(appData);
 		}
 	});
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Controls$updateCellData = F2(
 	function (appData, cellUpdateData) {
 		var _v0 = A2(
@@ -7001,6 +7070,7 @@ var $elm$core$List$append = F2(
 			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
 		}
 	});
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $author$project$Datatypes$ClueClicked = function (a) {
 	return {$: 'ClueClicked', a: a};
 };
@@ -7827,6 +7897,8 @@ var $author$project$Clue$renderClue = F5(
 							'cluegrid-clue-is-active',
 							A3($author$project$Clue$isActiveClue, clue, activeClueIndex, clues))
 						])),
+					$elm$html$Html$Attributes$id(
+					$author$project$Clue$getClueId(clueIndex)),
 					$elm$html$Html$Events$onClick(
 					$author$project$Datatypes$ClueClicked(clueIndex))
 				]),
@@ -7921,7 +7993,8 @@ var $author$project$Clue$renderCluesData = F3(
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('cluegrid-clues-cluelist')
+								$elm$html$Html$Attributes$class('cluegrid-clues-cluelist'),
+								$elm$html$Html$Attributes$id('cluegrid-clues-scrollable-area')
 							]),
 						A2(
 							$elm$core$List$indexedMap,

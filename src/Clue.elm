@@ -1,11 +1,11 @@
-module Clue exposing (decodeClues, renderCluesData)
+module Clue exposing (decodeClues, getClueId, renderCluesData)
 
 import Array
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol)
 import Datatypes exposing (Clue, ClueDirection(..), Clues, Grid, Msg(..))
 import ElmEscapeHtml exposing (unescape)
 import Html exposing (Html, div, strong, text)
-import Html.Attributes exposing (class, classList)
+import Html.Attributes exposing (class, classList, id)
 import Html.Events exposing (onClick)
 import Json.Decode
     exposing
@@ -140,6 +140,11 @@ getClueCurrentSolution clue grid =
             ""
 
 
+getClueId : Int -> String
+getClueId index =
+    "cluegrid-clue-number-" ++ String.fromInt index
+
+
 renderClue : Clue -> Int -> Maybe Int -> Clues -> Grid -> Html Msg
 renderClue clue clueIndex activeClueIndex clues grid =
     div
@@ -147,6 +152,7 @@ renderClue clue clueIndex activeClueIndex clues grid =
             [ ( "cluegrid-clue", True )
             , ( "cluegrid-clue-is-active", isActiveClue clue activeClueIndex clues )
             ]
+        , id (getClueId clueIndex)
         , onClick (ClueClicked clueIndex)
         ]
         [ strong [ class "cluegrid-clue-number" ] [ text (String.fromInt clue.gridNumber) ]
@@ -164,7 +170,7 @@ renderCluesData clues grid activeClueIndex =
         [ class "cluegrid-clues-container" ]
         (List.append
             [ strong [ class "cluegrid-clues-header" ] [ text "CLUES" ] ]
-            [ div [ class "cluegrid-clues-cluelist" ]
+            [ div [ class "cluegrid-clues-cluelist", id "cluegrid-clues-scrollable-area" ]
                 (List.indexedMap (\index clue -> renderClue clue index activeClueIndex clues grid) clues)
             ]
         )

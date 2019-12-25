@@ -1,11 +1,13 @@
 port module Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
 
 import Array
+import Browser.Dom as Dom
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderRow, updateCellEntry)
-import Clue exposing (renderCluesData)
+import Clue exposing (getClueId, renderCluesData)
 import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..))
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
+import Task
 
 
 port sendCellUpdate : CellUpdateData -> Cmd msg
@@ -69,18 +71,64 @@ setActiveClue appData clueIndex =
             appData
 
 
-noCmdLoaded : AppData -> ( Model, Cmd msg )
-noCmdLoaded appData =
-    ( Loaded appData, Cmd.none )
+getClueYPosition : String -> String -> Int
+getClueYPosition clueId scrollAreaId =
+    0
 
 
-sendUpdateData : String -> Int -> Int -> AppData -> ( Model, Cmd msg )
+scrollToClue : AppData -> Cmd Msg
+scrollToClue appData =
+    -- Because of the way our app is designed, we have some trouble getting the
+    -- exact scroll position of the clue. What we need to do is to get the x and y
+    -- position of the scrollarea. We also need to get the scroll position. For this
+    -- we need to use both getElement and getViewport. This whole thing would be a
+    -- lot simpler if we could set the parent in getElement
+    -- TODO (26 Dec 2019 sam): Clean up the code, make it less nested
+    -- TODO (26 Dec 2019 sam): Add some more logic to scrolling logic. Don't keep
+    -- scrolling to the top.
+    let
+        clueIndex =
+            case appData.activeClueIndex of
+                Just index ->
+                    index
+
+                Nothing ->
+                    0
+    in
+    getClueId clueIndex
+        |> Dom.getElement
+        |> Task.andThen
+            (\clue ->
+                Dom.getElement "cluegrid-clues-scrollable-area"
+                    |> Task.andThen
+                        (\scrollAreaElement ->
+                            Dom.getViewportOf "cluegrid-clues-scrollable-area"
+                                |> Task.andThen
+                                    (\scrollAreaViewport ->
+                                        Dom.setViewportOf "cluegrid-clues-scrollable-area" 0 (scrollAreaViewport.viewport.y + clue.element.y - scrollAreaElement.element.y)
+                                    )
+                        )
+            )
+        |> Task.attempt (\_ -> SetScroll)
+
+
+sendScrollToClue : AppData -> ( Model, Cmd Msg )
+sendScrollToClue appData =
+    ( Loaded appData, scrollToClue appData )
+
+
+sendUpdateData : String -> Int -> Int -> AppData -> ( Model, Cmd Msg )
 sendUpdateData letter row col appData =
     let
         cellUpdateData =
             CellUpdateData row col letter
     in
-    ( Loaded appData, sendCellUpdate cellUpdateData )
+    ( Loaded appData
+    , Cmd.batch
+        [ sendCellUpdate cellUpdateData
+        , scrollToClue appData
+        ]
+    )
 
 
 changeClueIndex : AppData -> Int -> AppData
@@ -107,7 +155,7 @@ selectPreviousClue appData =
     changeClueIndex appData -1
 
 
-handleKeyInput : String -> AppData -> ( Model, Cmd msg )
+handleKeyInput : String -> AppData -> ( Model, Cmd Msg )
 handleKeyInput key appData =
     let
         keyInput =
@@ -118,41 +166,41 @@ handleKeyInput key appData =
             case control of
                 EnterKey ->
                     toggleActiveClue appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 BackspaceKey ->
                     changeActiveEntry appData Nothing
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 TabKey ->
                     selectNextClue appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 ShiftTabKey ->
                     selectPreviousClue appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 _ ->
                     appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
         ArrowKey arrow ->
             case arrow of
                 ArrowKeyRight ->
                     moveRight appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 ArrowKeyLeft ->
                     moveLeft appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 ArrowKeyUp ->
                     moveUp appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
                 ArrowKeyDown ->
                     moveDown appData
-                        |> noCmdLoaded
+                        |> sendScrollToClue
 
         LetterKey letter ->
             let
@@ -169,7 +217,7 @@ handleKeyInput key appData =
 
         UnsupportedKey ->
             appData
-                |> noCmdLoaded
+                |> sendScrollToClue
 
 
 toggleActiveClue : AppData -> AppData

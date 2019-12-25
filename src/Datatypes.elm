@@ -47,6 +47,7 @@ type Msg
     | CellClicked Int Int
     | ClueClicked Int
     | CellUpdate CellUpdateData
+    | SetScroll
 
 
 type alias Clue =
