@@ -13,7 +13,7 @@
 --                                                          Sam (14 Dec 2019)
 
 
-port module Datatypes exposing
+module Datatypes exposing
     ( AppData
     , ArrowKeyDirection(..)
     , Cell
@@ -29,14 +29,10 @@ port module Datatypes exposing
     , KeyboardInput(..)
     , Model(..)
     , Msg(..)
-    , recieveCellUpdate
     )
 
 import Array exposing (Array)
 import Http
-
-
-port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
 
 
 type Model
@@ -135,6 +131,8 @@ type ControlKey
     = SpaceBar
     | EnterKey
     | BackspaceKey
+    | TabKey
+    | ShiftTabKey
 
 
 type KeyboardInput

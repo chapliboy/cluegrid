@@ -83,11 +83,32 @@ sendUpdateData letter row col appData =
     ( Loaded appData, sendCellUpdate cellUpdateData )
 
 
+changeClueIndex : AppData -> Int -> AppData
+changeClueIndex appData change =
+    let
+        clueIndex =
+            case appData.activeClueIndex of
+                Nothing ->
+                    0
+
+                Just index ->
+                    modBy (List.length appData.cluegridData.clues) (index + change)
+    in
+    setActiveClue appData clueIndex
+
+
+selectNextClue : AppData -> AppData
+selectNextClue appData =
+    changeClueIndex appData 1
+
+
+selectPreviousClue : AppData -> AppData
+selectPreviousClue appData =
+    changeClueIndex appData -1
+
+
 handleKeyInput : String -> AppData -> ( Model, Cmd msg )
 handleKeyInput key appData =
-    -- TODO (25 Dec 2019 sam): These controls should probably be
-    -- returning Cmd as well as appData. Just something to keep in
-    -- mind
     let
         keyInput =
             keyToKeyboardInput key
@@ -101,6 +122,14 @@ handleKeyInput key appData =
 
                 BackspaceKey ->
                     changeActiveEntry appData Nothing
+                        |> noCmdLoaded
+
+                TabKey ->
+                    selectNextClue appData
+                        |> noCmdLoaded
+
+                ShiftTabKey ->
+                    selectPreviousClue appData
                         |> noCmdLoaded
 
                 _ ->
@@ -303,6 +332,12 @@ keyToKeyboardInput code =
 
     else if code == "Backspace" then
         ControlKey BackspaceKey
+
+    else if code == "Tab" then
+        ControlKey TabKey
+
+    else if code == "ShiftTab" then
+        ControlKey ShiftTabKey
 
     else
         UnsupportedKey

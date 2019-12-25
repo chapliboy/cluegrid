@@ -17,12 +17,22 @@
     var ws = new WebSocket('ws://127.0.0.1:8080/');
     var updateCellHandler = function (message) {
       data = JSON.parse(message.data);
-      console.log(data);
       app.ports.recieveCellUpdate.send(data);
     }
+    window.addEventListener('keydown', event=> {
+      if (["ArrowUp", "ArrowDown", "Tab"].includes(event.code)) {
+        // We use some of these keys to navigate around the app
+        // and don't want their default behaviours
+        event.preventDefault();
+      }
+      if (event.code == "Tab" && event.shiftKey) {
+        app.ports.recieveKeyPress.send("ShiftTab");
+      } else {
+        app.ports.recieveKeyPress.send(event.code);
+      }
+    })
     ws.onmessage = updateCellHandler
     app.ports.sendCellUpdate.subscribe(function(data) {
-      console.log(data);
       ws.send(JSON.stringify(data));
     })
   </script>

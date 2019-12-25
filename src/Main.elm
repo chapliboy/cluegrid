@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Browser.Events
@@ -6,12 +6,18 @@ import Cell exposing (renderRow)
 import Clue exposing (renderCluesData)
 import Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
 import Data exposing (decodeCluegridData)
-import Datatypes exposing (AppData, CellUpdateData, CluegridData, Clues, Model(..), Msg(..), recieveCellUpdate)
+import Datatypes exposing (AppData, CellUpdateData, CluegridData, Clues, Model(..), Msg(..))
 import Debug exposing (log)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Http
 import Json.Decode exposing (field, map, string)
+
+
+port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
+
+
+port recieveKeyPress : (String -> msg) -> Sub msg
 
 
 main =
@@ -81,11 +87,8 @@ subscriptions model =
         -- TODO (08 Dec 2019 sam): PreventDefauts somehow. Otherwise down arrow
         -- leads to scrolling, and other such UX problems. See if this can all
         -- be moved to some kind of onKeyDown eventListener on the app class.
-        [ Browser.Events.onKeyDown
-            (map KeyPressed
-                (field "code" string)
-            )
-        , recieveCellUpdate CellUpdate
+        [ recieveCellUpdate CellUpdate
+        , recieveKeyPress KeyPressed
         ]
 
 
