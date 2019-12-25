@@ -4,9 +4,9 @@ import Browser
 import Browser.Events
 import Cell exposing (renderRow)
 import Clue exposing (renderCluesData)
-import Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue)
+import Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
 import Data exposing (decodeCluegridData)
-import Datatypes exposing (AppData, CluegridData, Clues, Msg(..))
+import Datatypes exposing (AppData, CellUpdateData, CluegridData, Clues, Model(..), Msg(..), recieveCellUpdate)
 import Debug exposing (log)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
@@ -23,17 +23,11 @@ main =
         }
 
 
-type Model
-    = Loading
-    | Failure
-    | Loaded AppData
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Loading
     , Http.get
-        { url = "http://localhost:8080/Oct01-2019.json"
+        { url = "http://localhost:8000/Oct01-2019.json"
         , expect = Http.expectJson FetchedData decodeCluegridData
         }
     )
@@ -60,7 +54,7 @@ update msg model =
                 -- TODO (13 Dec 2019 sam): See if we should pass the clues-container
                 -- scroll here as a Cmd msg.
                 KeyPressed key ->
-                    ( Loaded (handleKeyInput key appData), Cmd.none )
+                    handleKeyInput key appData
 
                 CellClicked rowNum colNum ->
                     ( Loaded (selectCell appData rowNum colNum), Cmd.none )
@@ -71,6 +65,9 @@ update msg model =
                 -- TODO (13 Dec 2019 sam): This means that the crossword data can
                 -- only be fetched once. Will have to change this if we decide that
                 -- we want to change the data.
+                CellUpdate cellUpdateData ->
+                    ( Loaded (updateCellData appData cellUpdateData), Cmd.none )
+
                 _ ->
                     ( Loaded appData, Cmd.none )
 
@@ -88,6 +85,7 @@ subscriptions model =
             (map KeyPressed
                 (field "code" string)
             )
+        , recieveCellUpdate CellUpdate
         ]
 
 

@@ -11,7 +11,20 @@
   <link rel='stylesheet' type='text/css' href='styles.css'>
   <script src='cluegrid.js'></script>
   <script>
-    var app = Elm.Main.init({node: document.getElementById("cluegrid-app")});
+    var app = Elm.Main.init({
+      node: document.getElementById("cluegrid-app"),
+    });
+    var ws = new WebSocket('ws://127.0.0.1:8080/');
+    var updateCellHandler = function (message) {
+      data = JSON.parse(message.data);
+      console.log(data);
+      app.ports.recieveCellUpdate.send(data);
+    }
+    ws.onmessage = updateCellHandler
+    app.ports.sendCellUpdate.subscribe(function(data) {
+      console.log(data);
+      ws.send(JSON.stringify(data));
+    })
   </script>
 </body>
 </html>

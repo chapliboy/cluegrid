@@ -1,11 +1,36 @@
-module Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue)
+port module Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
 
 import Array
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderRow, updateCellEntry)
 import Clue exposing (renderCluesData)
-import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Msg(..))
+import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..))
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
+
+
+port sendCellUpdate : CellUpdateData -> Cmd msg
+
+
+updateCellData : AppData -> CellUpdateData -> AppData
+updateCellData appData cellUpdateData =
+    case getCellFromRowCol appData.cluegridData.grid ( cellUpdateData.row, cellUpdateData.col ) of
+        Nothing ->
+            appData
+
+        Just cell ->
+            let
+                newGrid =
+                    updateCellEntry cell
+                        (Just cellUpdateData.letter)
+                        appData.cluegridData.grid
+
+                cluegridData =
+                    appData.cluegridData
+
+                newCluegrid =
+                    { cluegridData | grid = newGrid }
+            in
+            { appData | cluegridData = newCluegrid }
 
 
 setActiveClue : AppData -> Int -> AppData
@@ -44,8 +69,25 @@ setActiveClue appData clueIndex =
             appData
 
 
-handleKeyInput : String -> AppData -> AppData
+noCmdLoaded : AppData -> ( Model, Cmd msg )
+noCmdLoaded appData =
+    ( Loaded appData, Cmd.none )
+
+
+sendUpdateData : String -> Int -> Int -> AppData -> ( Model, Cmd msg )
+sendUpdateData letter row col appData =
+    let
+        cellUpdateData =
+            CellUpdateData row col letter
+    in
+    ( Loaded appData, sendCellUpdate cellUpdateData )
+
+
+handleKeyInput : String -> AppData -> ( Model, Cmd msg )
 handleKeyInput key appData =
+    -- TODO (25 Dec 2019 sam): These controls should probably be
+    -- returning Cmd as well as appData. Just something to keep in
+    -- mind
     let
         keyInput =
             keyToKeyboardInput key
@@ -55,32 +97,50 @@ handleKeyInput key appData =
             case control of
                 EnterKey ->
                     toggleActiveClue appData
+                        |> noCmdLoaded
 
                 BackspaceKey ->
                     changeActiveEntry appData Nothing
+                        |> noCmdLoaded
 
                 _ ->
                     appData
+                        |> noCmdLoaded
 
         ArrowKey arrow ->
             case arrow of
                 ArrowKeyRight ->
                     moveRight appData
+                        |> noCmdLoaded
 
                 ArrowKeyLeft ->
                     moveLeft appData
+                        |> noCmdLoaded
 
                 ArrowKeyUp ->
                     moveUp appData
+                        |> noCmdLoaded
 
                 ArrowKeyDown ->
                     moveDown appData
+                        |> noCmdLoaded
 
         LetterKey letter ->
+            let
+                ( row, col ) =
+                    case appData.activeCell of
+                        Nothing ->
+                            ( -1, -1 )
+
+                        Just ( r, c ) ->
+                            ( r, c )
+            in
             changeActiveEntry appData (Just letter)
+                |> sendUpdateData letter row col
 
         UnsupportedKey ->
             appData
+                |> noCmdLoaded
 
 
 toggleActiveClue : AppData -> AppData

@@ -13,10 +13,11 @@
 --                                                          Sam (14 Dec 2019)
 
 
-module Datatypes exposing
+port module Datatypes exposing
     ( AppData
     , ArrowKeyDirection(..)
     , Cell
+    , CellUpdateData
     , Clue
     , ClueDirection(..)
     , CluegridData
@@ -26,11 +27,22 @@ module Datatypes exposing
     , ControlKey(..)
     , Grid
     , KeyboardInput(..)
+    , Model(..)
     , Msg(..)
+    , recieveCellUpdate
     )
 
 import Array exposing (Array)
 import Http
+
+
+port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
+
+
+type Model
+    = Loading
+    | Failure
+    | Loaded AppData
 
 
 type Msg
@@ -38,6 +50,7 @@ type Msg
     | KeyPressed String
     | CellClicked Int Int
     | ClueClicked Int
+    | CellUpdate CellUpdateData
 
 
 type alias Clue =
@@ -75,6 +88,13 @@ type alias Cell =
     , acrossClueIndex : Maybe Int
     , downClueIndex : Maybe Int
     , entry : Maybe String
+    }
+
+
+type alias CellUpdateData =
+    { row : Int
+    , col : Int
+    , letter : String
     }
 
 
