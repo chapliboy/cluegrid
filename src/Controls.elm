@@ -4,7 +4,7 @@ import Array
 import Browser.Dom as Dom
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderRow, updateCellEntry)
 import Clue exposing (getClueId, renderCluesData)
-import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..))
+import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..), RowCol)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
 import Task
@@ -15,7 +15,7 @@ port sendCellUpdate : CellUpdateData -> Cmd msg
 
 updateCellData : AppData -> CellUpdateData -> AppData
 updateCellData appData cellUpdateData =
-    case getCellFromRowCol appData.cluegridData.grid ( cellUpdateData.row, cellUpdateData.col ) of
+    case getCellFromRowCol appData.cluegridData.grid ( cellUpdateData.cell.row, cellUpdateData.cell.col ) of
         Nothing ->
             appData
 
@@ -23,7 +23,7 @@ updateCellData appData cellUpdateData =
             let
                 newGrid =
                     updateCellEntry cell
-                        (Just cellUpdateData.letter)
+                        cellUpdateData.letter
                         appData.cluegridData.grid
 
                 cluegridData =
@@ -117,11 +117,11 @@ sendScrollToClue appData =
     ( Loaded appData, scrollToClue appData )
 
 
-sendUpdateData : String -> Int -> Int -> AppData -> ( Model, Cmd Msg )
+sendUpdateData : Maybe String -> Int -> Int -> AppData -> ( Model, Cmd Msg )
 sendUpdateData letter row col appData =
     let
         cellUpdateData =
-            CellUpdateData row col letter
+            CellUpdateData (RowCol row col) letter
     in
     ( Loaded appData
     , Cmd.batch
@@ -169,8 +169,17 @@ handleKeyInput key appData =
                         |> sendScrollToClue
 
                 BackspaceKey ->
+                    let
+                        ( row, col ) =
+                            case appData.activeCell of
+                                Nothing ->
+                                    ( -1, -1 )
+
+                                Just ( r, c ) ->
+                                    ( r, c )
+                    in
                     changeActiveEntry appData Nothing
-                        |> sendScrollToClue
+                        |> sendUpdateData Nothing row col
 
                 TabKey ->
                     selectNextClue appData
@@ -213,7 +222,7 @@ handleKeyInput key appData =
                             ( r, c )
             in
             changeActiveEntry appData (Just letter)
-                |> sendUpdateData letter row col
+                |> sendUpdateData (Just letter) row col
 
         UnsupportedKey ->
             appData

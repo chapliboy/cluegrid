@@ -18,6 +18,7 @@ module Datatypes exposing
     , ArrowKeyDirection(..)
     , Cell
     , CellUpdateData
+    , ChannelName
     , Clue
     , ClueDirection(..)
     , CluegridData
@@ -29,6 +30,7 @@ module Datatypes exposing
     , KeyboardInput(..)
     , Model(..)
     , Msg(..)
+    , RowCol
     )
 
 import Array exposing (Array)
@@ -48,6 +50,10 @@ type Msg
     | ClueClicked Int
     | CellUpdate CellUpdateData
     | SetScroll
+
+
+type alias ChannelName =
+    String
 
 
 type alias Clue =
@@ -88,10 +94,13 @@ type alias Cell =
     }
 
 
+type alias RowCol =
+    { row : Int, col : Int }
+
+
 type alias CellUpdateData =
-    { row : Int
-    , col : Int
-    , letter : String
+    { cell : RowCol
+    , letter : Maybe String
     }
 
 

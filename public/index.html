@@ -14,11 +14,6 @@
     var app = Elm.Main.init({
       node: document.getElementById("cluegrid-app"),
     });
-    var ws = new WebSocket('ws://127.0.0.1:8080/');
-    var updateCellHandler = function (message) {
-      data = JSON.parse(message.data);
-      app.ports.recieveCellUpdate.send(data);
-    }
     window.addEventListener('keydown', event=> {
       if (["ArrowUp", "ArrowDown", "Tab"].includes(event.code)) {
         // We use some of these keys to navigate around the app
@@ -31,10 +26,46 @@
         app.ports.recieveKeyPress.send(event.code);
       }
     })
-    ws.onmessage = updateCellHandler
+
+    let ws = new WebSocket('ws://127.0.0.1:8080/?name=Hedwig');
+    // TODO (28 Dec 2019 sam): Write a function that waits for the socket to be
+    // open, and then sends the message. The current implementation, where we
+    // just send a message fails in the case that the websocket is not yet open
+
+    // If we try to send a message before the socket is ready, it causes some
+    // issues. So we want to save all the messages that need to be sent, and then
+    // send them once the socket is opened
+    var msgs = []
+    function ws_send(message, data) {
+      if (ws.readyState !== 1) {
+        msgs.push([message, data])
+      } else {
+        ws.send(JSON.stringify({message: message, data: data}));
+      }
+    }
+    ws.onopen = function () {
+      while (msgs.length > 0) {
+        qMsg = msgs.pop();
+        ws_send(qMsg[0], qMsg[1])
+      }
+    }
+    // app.ports.sendJoinChannel.subscribe(function(channelName) {
+    //   ws_send('join_channel', channelName);
+    // })
     app.ports.sendCellUpdate.subscribe(function(data) {
-      ws.send(JSON.stringify(data));
+      ws_send('update_entry', data);
     })
+    app.ports.sendRequestAllCells.subscribe(function(data) {
+      console.log('requesting all cells')
+      ws_send('request_all_cells', data);
+    })
+    ws.onmessage = function(message) {
+      console.log(message)
+      message = JSON.parse(message.data);
+      if (message.message == 'update_entry') {
+        app.ports.recieveCellUpdate.send(message.data);
+      }
+    }
   </script>
 </body>
 </html>

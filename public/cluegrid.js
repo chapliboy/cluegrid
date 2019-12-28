@@ -5315,6 +5315,7 @@ var $author$project$Datatypes$FetchedData = function (a) {
 	return {$: 'FetchedData', a: a};
 };
 var $author$project$Datatypes$Loading = {$: 'Loading'};
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Datatypes$CluegridData = F4(
 	function (clues, grid, size, info) {
 		return {clues: clues, grid: grid, info: info, size: size};
@@ -6277,14 +6278,21 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$sendRequestAllCells = _Platform_outgoingPort('sendRequestAllCells', $elm$json$Json$Encode$string);
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
 		$author$project$Datatypes$Loading,
-		$elm$http$Http$get(
-			{
-				expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeCluegridData),
-				url: 'http://localhost:8000/Oct01-2019.json'
-			}));
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					$elm$http$Http$get(
+					{
+						expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeCluegridData),
+						url: 'http://localhost:8000/Oct01-2019.json'
+					}),
+					$author$project$Main$sendRequestAllCells('')
+				])));
 };
 var $author$project$Datatypes$CellUpdate = function (a) {
 	return {$: 'CellUpdate', a: a};
@@ -6297,21 +6305,38 @@ var $author$project$Main$recieveCellUpdate = _Platform_incomingPort(
 	'recieveCellUpdate',
 	A2(
 		$elm$json$Json$Decode$andThen,
-		function (row) {
+		function (letter) {
 			return A2(
 				$elm$json$Json$Decode$andThen,
-				function (letter) {
-					return A2(
-						$elm$json$Json$Decode$andThen,
-						function (col) {
-							return $elm$json$Json$Decode$succeed(
-								{col: col, letter: letter, row: row});
-						},
-						A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int));
+				function (cell) {
+					return $elm$json$Json$Decode$succeed(
+						{cell: cell, letter: letter});
 				},
-				A2($elm$json$Json$Decode$field, 'letter', $elm$json$Json$Decode$string));
+				A2(
+					$elm$json$Json$Decode$field,
+					'cell',
+					A2(
+						$elm$json$Json$Decode$andThen,
+						function (row) {
+							return A2(
+								$elm$json$Json$Decode$andThen,
+								function (col) {
+									return $elm$json$Json$Decode$succeed(
+										{col: col, row: row});
+								},
+								A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int));
+						},
+						A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int))));
 		},
-		A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int)));
+		A2(
+			$elm$json$Json$Decode$field,
+			'letter',
+			$elm$json$Json$Decode$oneOf(
+				_List_fromArray(
+					[
+						$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+						A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
+					])))));
 var $author$project$Main$recieveKeyPress = _Platform_incomingPort('recieveKeyPress', $elm$json$Json$Decode$string);
 var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$batch(
@@ -6850,12 +6875,25 @@ var $author$project$Controls$sendScrollToClue = function (appData) {
 		$author$project$Datatypes$Loaded(appData),
 		$author$project$Controls$scrollToClue(appData));
 };
-var $author$project$Datatypes$CellUpdateData = F3(
-	function (row, col, letter) {
-		return {col: col, letter: letter, row: row};
+var $author$project$Datatypes$CellUpdateData = F2(
+	function (cell, letter) {
+		return {cell: cell, letter: letter};
 	});
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $author$project$Datatypes$RowCol = F2(
+	function (row, col) {
+		return {col: col, row: row};
+	});
+var $elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
 var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -6869,7 +6907,6 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Controls$sendCellUpdate = _Platform_outgoingPort(
 	'sendCellUpdate',
 	function ($) {
@@ -6877,19 +6914,32 @@ var $author$project$Controls$sendCellUpdate = _Platform_outgoingPort(
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
-					'col',
-					$elm$json$Json$Encode$int($.col)),
+					'cell',
+					function ($) {
+						return $elm$json$Json$Encode$object(
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									'col',
+									$elm$json$Json$Encode$int($.col)),
+									_Utils_Tuple2(
+									'row',
+									$elm$json$Json$Encode$int($.row))
+								]));
+					}($.cell)),
 					_Utils_Tuple2(
 					'letter',
-					$elm$json$Json$Encode$string($.letter)),
-					_Utils_Tuple2(
-					'row',
-					$elm$json$Json$Encode$int($.row))
+					function ($) {
+						return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$string, $);
+					}($.letter))
 				]));
 	});
 var $author$project$Controls$sendUpdateData = F4(
 	function (letter, row, col, appData) {
-		var cellUpdateData = A3($author$project$Datatypes$CellUpdateData, row, col, letter);
+		var cellUpdateData = A2(
+			$author$project$Datatypes$CellUpdateData,
+			A2($author$project$Datatypes$RowCol, row, col),
+			letter);
 		return _Utils_Tuple2(
 			$author$project$Datatypes$Loaded(appData),
 			$elm$core$Platform$Cmd$batch(
@@ -6921,7 +6971,24 @@ var $author$project$Controls$handleKeyInput = F2(
 						return $author$project$Controls$sendScrollToClue(
 							$author$project$Controls$toggleActiveClue(appData));
 					case 'BackspaceKey':
-						return $author$project$Controls$sendScrollToClue(
+						var _v2 = function () {
+							var _v3 = appData.activeCell;
+							if (_v3.$ === 'Nothing') {
+								return _Utils_Tuple2(-1, -1);
+							} else {
+								var _v4 = _v3.a;
+								var r = _v4.a;
+								var c = _v4.b;
+								return _Utils_Tuple2(r, c);
+							}
+						}();
+						var row = _v2.a;
+						var col = _v2.b;
+						return A4(
+							$author$project$Controls$sendUpdateData,
+							$elm$core$Maybe$Nothing,
+							row,
+							col,
 							A2($author$project$Controls$changeActiveEntry, appData, $elm$core$Maybe$Nothing));
 					case 'TabKey':
 						return $author$project$Controls$sendScrollToClue(
@@ -6950,22 +7017,22 @@ var $author$project$Controls$handleKeyInput = F2(
 				}
 			case 'LetterKey':
 				var letter = keyInput.a;
-				var _v3 = function () {
-					var _v4 = appData.activeCell;
-					if (_v4.$ === 'Nothing') {
+				var _v6 = function () {
+					var _v7 = appData.activeCell;
+					if (_v7.$ === 'Nothing') {
 						return _Utils_Tuple2(-1, -1);
 					} else {
-						var _v5 = _v4.a;
-						var r = _v5.a;
-						var c = _v5.b;
+						var _v8 = _v7.a;
+						var r = _v8.a;
+						var c = _v8.b;
 						return _Utils_Tuple2(r, c);
 					}
 				}();
-				var row = _v3.a;
-				var col = _v3.b;
+				var row = _v6.a;
+				var col = _v6.b;
 				return A4(
 					$author$project$Controls$sendUpdateData,
-					letter,
+					$elm$core$Maybe$Just(letter),
 					row,
 					col,
 					A2(
@@ -6982,16 +7049,12 @@ var $author$project$Controls$updateCellData = F2(
 		var _v0 = A2(
 			$author$project$Cell$getCellFromRowCol,
 			appData.cluegridData.grid,
-			_Utils_Tuple2(cellUpdateData.row, cellUpdateData.col));
+			_Utils_Tuple2(cellUpdateData.cell.row, cellUpdateData.cell.col));
 		if (_v0.$ === 'Nothing') {
 			return appData;
 		} else {
 			var cell = _v0.a;
-			var newGrid = A3(
-				$author$project$Cell$updateCellEntry,
-				cell,
-				$elm$core$Maybe$Just(cellUpdateData.letter),
-				appData.cluegridData.grid);
+			var newGrid = A3($author$project$Cell$updateCellEntry, cell, cellUpdateData.letter, appData.cluegridData.grid);
 			var cluegridData = appData.cluegridData;
 			var newCluegrid = _Utils_update(
 				cluegridData,

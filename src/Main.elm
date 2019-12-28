@@ -6,7 +6,7 @@ import Cell exposing (renderRow)
 import Clue exposing (renderCluesData)
 import Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
 import Data exposing (decodeCluegridData)
-import Datatypes exposing (AppData, CellUpdateData, CluegridData, Clues, Model(..), Msg(..))
+import Datatypes exposing (AppData, CellUpdateData, ChannelName, CluegridData, Clues, Model(..), Msg(..))
 import Debug exposing (log)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
@@ -20,6 +20,12 @@ port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
 port recieveKeyPress : (String -> msg) -> Sub msg
 
 
+port sendJoinChannel : ChannelName -> Cmd msg
+
+
+port sendRequestAllCells : String -> Cmd msg
+
+
 main =
     Browser.element
         { init = init
@@ -29,13 +35,22 @@ main =
         }
 
 
+getChannelName : ChannelName
+getChannelName =
+    "Hedwig"
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Loading
-    , Http.get
-        { url = "http://localhost:8000/Oct01-2019.json"
-        , expect = Http.expectJson FetchedData decodeCluegridData
-        }
+    , Cmd.batch
+        [ -- sendJoinChannel getChannelName
+          Http.get
+            { url = "http://localhost:8000/Oct01-2019.json"
+            , expect = Http.expectJson FetchedData decodeCluegridData
+            }
+        , sendRequestAllCells ""
+        ]
     )
 
 
