@@ -14,7 +14,9 @@
 
 
 module Datatypes exposing
-    ( AppData
+    ( ActiveCell
+    , ActiveClueIndex
+    , AppData
     , ArrowKeyDirection(..)
     , Cell
     , CellUpdateData
@@ -31,10 +33,12 @@ module Datatypes exposing
     , Model(..)
     , Msg(..)
     , RowCol
+    , SocketMessage
     )
 
 import Array exposing (Array)
 import Http
+import Json.Encode as E
 
 
 type Model
@@ -44,16 +48,28 @@ type Model
 
 
 type Msg
-    = FetchedData (Result Http.Error CluegridData)
+    = FetchedData (Result Http.Error AppData)
     | KeyPressed String
     | CellClicked Int Int
     | ClueClicked Int
     | CellUpdate CellUpdateData
     | SetScroll
+    | HandleSocketMessage E.Value
+    | NoOp
 
 
 type alias ChannelName =
     String
+
+
+type alias ClueIndex =
+    Int
+
+
+type SocketMessage
+    = JoinChannelMessage ChannelName
+    | CellUpdateMessage CellUpdateData
+    | ActiveClueUpdateMessage ClueIndex
 
 
 type alias Clue =
@@ -104,6 +120,14 @@ type alias CellUpdateData =
     }
 
 
+type alias ActiveClueIndex =
+    Maybe Int
+
+
+type alias ActiveCell =
+    Maybe ( Int, Int )
+
+
 type alias Grid =
     Array (Array Cell)
 
@@ -124,9 +148,12 @@ type alias CluegridInfo =
 
 
 type alias AppData =
-    { cluegridData : CluegridData
-    , activeClueIndex : Maybe Int
-    , activeCell : Maybe ( Int, Int )
+    { clues : Clues
+    , grid : Grid
+    , cluegridSize : CluegridSize
+    , cluegridInfo : CluegridInfo
+    , activeClueIndex : ActiveClueIndex
+    , activeCell : ActiveCell
     }
 
 

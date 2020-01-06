@@ -5310,15 +5310,15 @@ var $elm$core$Task$perform = F2(
 			$elm$core$Task$Perform(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
-var $elm$browser$Browser$element = _Browser_element;
+var $elm$browser$Browser$application = _Browser_application;
 var $author$project$Datatypes$FetchedData = function (a) {
 	return {$: 'FetchedData', a: a};
 };
 var $author$project$Datatypes$Loading = {$: 'Loading'};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$Datatypes$CluegridData = F4(
-	function (clues, grid, size, info) {
-		return {clues: clues, grid: grid, info: info, size: size};
+var $author$project$Datatypes$AppData = F6(
+	function (clues, grid, cluegridSize, cluegridInfo, activeClueIndex, activeCell) {
+		return {activeCell: activeCell, activeClueIndex: activeClueIndex, cluegridInfo: cluegridInfo, cluegridSize: cluegridSize, clues: clues, grid: grid};
 	});
 var $author$project$Datatypes$CluegridInfo = F5(
 	function (date, title, author, editor, copyright) {
@@ -5450,11 +5450,10 @@ var $author$project$Cell$decodeGrid = A2(
 	$author$project$Cell$listListCellToGrid,
 	$elm$json$Json$Decode$list(
 		$elm$json$Json$Decode$list($author$project$Cell$decodeCell)));
-var $elm$json$Json$Decode$map4 = _Json_map4;
 var $elm$json$Json$Decode$map5 = _Json_map5;
-var $author$project$Data$decodeCluegridData = A5(
-	$elm$json$Json$Decode$map4,
-	$author$project$Datatypes$CluegridData,
+var $author$project$Data$decodeAppData = A7(
+	$elm$json$Json$Decode$map6,
+	$author$project$Datatypes$AppData,
 	A2($elm$json$Json$Decode$field, 'clues', $author$project$Clue$decodeClues),
 	A2($elm$json$Json$Decode$field, 'grid', $author$project$Cell$decodeGrid),
 	A3(
@@ -5490,7 +5489,9 @@ var $author$project$Data$decodeCluegridData = A5(
 		A2(
 			$elm$json$Json$Decode$field,
 			'info',
-			A2($elm$json$Json$Decode$field, 'copyright', $elm$json$Json$Decode$string))));
+			A2($elm$json$Json$Decode$field, 'copyright', $elm$json$Json$Decode$string))),
+	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing),
+	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing));
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
@@ -6280,22 +6281,33 @@ var $elm$http$Http$get = function (r) {
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Main$sendRequestAllCells = _Platform_outgoingPort('sendRequestAllCells', $elm$json$Json$Encode$string);
-var $author$project$Main$init = function (_v0) {
-	return _Utils_Tuple2(
-		$author$project$Datatypes$Loading,
-		$elm$core$Platform$Cmd$batch(
-			_List_fromArray(
-				[
-					$elm$http$Http$get(
-					{
-						expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeCluegridData),
-						url: 'http://localhost:8000/Oct01-2019.json'
-					}),
-					$author$project$Main$sendRequestAllCells('')
-				])));
+var $author$project$Main$init = F3(
+	function (flags, url, key) {
+		return _Utils_Tuple2(
+			$author$project$Datatypes$Loading,
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						$elm$http$Http$get(
+						{
+							expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeAppData),
+							url: '/Oct01-2019.json'
+						}),
+						$author$project$Main$sendRequestAllCells('')
+					])));
+	});
+var $author$project$Datatypes$NoOp = {$: 'NoOp'};
+var $author$project$Main$onUrlChange = function (url) {
+	return $author$project$Datatypes$NoOp;
+};
+var $author$project$Main$onUrlRequest = function (urlRequest) {
+	return $author$project$Datatypes$NoOp;
 };
 var $author$project$Datatypes$CellUpdate = function (a) {
 	return {$: 'CellUpdate', a: a};
+};
+var $author$project$Datatypes$HandleSocketMessage = function (a) {
+	return {$: 'HandleSocketMessage', a: a};
 };
 var $author$project$Datatypes$KeyPressed = function (a) {
 	return {$: 'KeyPressed', a: a};
@@ -6338,18 +6350,17 @@ var $author$project$Main$recieveCellUpdate = _Platform_incomingPort(
 						A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
 					])))));
 var $author$project$Main$recieveKeyPress = _Platform_incomingPort('recieveKeyPress', $elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$Main$recieveSocketMessage = _Platform_incomingPort('recieveSocketMessage', $elm$json$Json$Decode$value);
 var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
 				$author$project$Main$recieveCellUpdate($author$project$Datatypes$CellUpdate),
-				$author$project$Main$recieveKeyPress($author$project$Datatypes$KeyPressed)
+				$author$project$Main$recieveKeyPress($author$project$Datatypes$KeyPressed),
+				$author$project$Main$recieveSocketMessage($author$project$Datatypes$HandleSocketMessage)
 			]));
 };
-var $author$project$Datatypes$AppData = F3(
-	function (cluegridData, activeClueIndex, activeCell) {
-		return {activeCell: activeCell, activeClueIndex: activeClueIndex, cluegridData: cluegridData};
-	});
 var $author$project$Datatypes$Failure = {$: 'Failure'};
 var $author$project$Datatypes$Loaded = function (a) {
 	return {$: 'Loaded', a: a};
@@ -6481,7 +6492,7 @@ var $author$project$Controls$selectCell = F3(
 	function (appData, rowNum, colNum) {
 		var _v0 = A2(
 			$author$project$Cell$getCellFromRowCol,
-			appData.cluegridData.grid,
+			appData.grid,
 			_Utils_Tuple2(rowNum, colNum));
 		if (_v0.$ === 'Just') {
 			var cellAtRowCol = _v0.a;
@@ -6490,7 +6501,7 @@ var $author$project$Controls$selectCell = F3(
 				{
 					activeCell: $elm$core$Maybe$Just(
 						_Utils_Tuple2(rowNum, colNum)),
-					activeClueIndex: A4($author$project$Controls$updateActiveClue, appData.activeClueIndex, cellAtRowCol, appData.activeCell, appData.cluegridData.clues)
+					activeClueIndex: A4($author$project$Controls$updateActiveClue, appData.activeClueIndex, cellAtRowCol, appData.activeCell, appData.clues)
 				});
 		} else {
 			return appData;
@@ -6509,7 +6520,7 @@ var $author$project$Controls$moveCell = F4(
 				var col = _v1.b;
 				var _v2 = A2(
 					$author$project$Cell$getCellFromRowCol,
-					appData.cluegridData.grid,
+					appData.grid,
 					_Utils_Tuple2(row + rowChange, col + colChange));
 				if (_v2.$ === 'Just') {
 					var cellAtRowCol = _v2.a;
@@ -6550,7 +6561,7 @@ var $author$project$Controls$moveNext = function (appData) {
 		var _v1 = A2(
 			$elm$core$Array$get,
 			clueIndex,
-			$elm$core$Array$fromList(appData.cluegridData.clues));
+			$elm$core$Array$fromList(appData.clues));
 		if (_v1.$ === 'Just') {
 			var clue = _v1.a;
 			var _v2 = clue.direction;
@@ -6582,7 +6593,7 @@ var $author$project$Controls$movePrevious = function (appData) {
 		var _v1 = A2(
 			$elm$core$Array$get,
 			clueIndex,
-			$elm$core$Array$fromList(appData.cluegridData.clues));
+			$elm$core$Array$fromList(appData.clues));
 		if (_v1.$ === 'Just') {
 			var clue = _v1.a;
 			var _v2 = clue.direction;
@@ -6656,18 +6667,14 @@ var $author$project$Controls$changeActiveEntry = F2(
 			var col = _v1.b;
 			var _v2 = A2(
 				$author$project$Cell$getCellFromRowCol,
-				appData.cluegridData.grid,
+				appData.grid,
 				_Utils_Tuple2(row, col));
 			if (_v2.$ === 'Just') {
 				var cellAtRowCol = _v2.a;
-				var grid = A3($author$project$Cell$updateCellEntry, cellAtRowCol, letter, appData.cluegridData.grid);
-				var cluegridData = appData.cluegridData;
-				var updatedClueGridData = _Utils_update(
-					cluegridData,
-					{grid: grid});
+				var grid = A3($author$project$Cell$updateCellEntry, cellAtRowCol, letter, appData.grid);
 				var updatedAppData = _Utils_update(
 					appData,
-					{cluegridData: updatedClueGridData});
+					{grid: grid});
 				if (letter.$ === 'Just') {
 					return $author$project$Controls$moveNext(updatedAppData);
 				} else {
@@ -6698,9 +6705,7 @@ var $author$project$Datatypes$LetterKey = function (a) {
 var $author$project$Datatypes$ShiftTabKey = {$: 'ShiftTabKey'};
 var $author$project$Datatypes$TabKey = {$: 'TabKey'};
 var $author$project$Datatypes$UnsupportedKey = {$: 'UnsupportedKey'};
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Controls$keyToKeyboardInput = function (code) {
-	var _v0 = A2($elm$core$Debug$log, 'arrow code', code);
 	if (A2($elm$core$String$startsWith, 'Arrow', code)) {
 		switch (code) {
 			case 'ArrowRight':
@@ -6745,12 +6750,12 @@ var $author$project$Controls$setActiveClue = F2(
 		var _v0 = A2(
 			$elm$core$Array$get,
 			clueIndex,
-			$elm$core$Array$fromList(appData.cluegridData.clues));
+			$elm$core$Array$fromList(appData.clues));
 		if (_v0.$ === 'Just') {
 			var clue = _v0.a;
 			var _v1 = A2(
 				$author$project$Cell$getCellFromRowCol,
-				appData.cluegridData.grid,
+				appData.grid,
 				_Utils_Tuple2(clue.startRow, clue.startCol));
 			if (_v1.$ === 'Just') {
 				var cell = _v1.a;
@@ -6794,7 +6799,7 @@ var $author$project$Controls$changeClueIndex = F2(
 				var index = _v0.a;
 				return A2(
 					$elm$core$Basics$modBy,
-					$elm$core$List$length(appData.cluegridData.clues),
+					$elm$core$List$length(appData.clues),
 					index + change);
 			}
 		}();
@@ -6835,6 +6840,10 @@ var $author$project$Clue$getClueId = function (index) {
 	return 'cluegrid-clue-number-' + $elm$core$String$fromInt(index);
 };
 var $elm$browser$Browser$Dom$getElement = _Browser_getElement;
+var $author$project$Controls$getScrollPortHeight = F3(
+	function (viewport, clue, scrollArea) {
+		return (_Utils_cmp(clue.element.y, scrollArea.element.y) < 0) ? ((viewport.viewport.y + clue.element.y) - scrollArea.element.y) : ((_Utils_cmp(clue.element.y + clue.element.height, scrollArea.element.height + scrollArea.element.y) > 0) ? ((((viewport.viewport.y + clue.element.y) + clue.element.height) - scrollArea.element.y) - scrollArea.element.height) : viewport.viewport.y);
+	});
 var $elm$browser$Browser$Dom$getViewportOf = _Browser_getViewportOf;
 var $elm$browser$Browser$Dom$setViewportOf = _Browser_setViewportOf;
 var $author$project$Controls$scrollToClue = function (appData) {
@@ -6861,7 +6870,8 @@ var $author$project$Controls$scrollToClue = function (appData) {
 						return A2(
 							$elm$core$Task$andThen,
 							function (scrollAreaViewport) {
-								return A3($elm$browser$Browser$Dom$setViewportOf, 'cluegrid-clues-scrollable-area', 0, (scrollAreaViewport.viewport.y + clue.element.y) - scrollAreaElement.element.y);
+								var scrollPortHeight = A3($author$project$Controls$getScrollPortHeight, scrollAreaViewport, clue, scrollAreaElement);
+								return A3($elm$browser$Browser$Dom$setViewportOf, 'cluegrid-clues-scrollable-area', 0, scrollPortHeight);
 							},
 							$elm$browser$Browser$Dom$getViewportOf('cluegrid-clues-scrollable-area'));
 					},
@@ -7044,24 +7054,25 @@ var $author$project$Controls$handleKeyInput = F2(
 		}
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Controls$selectCellAndScroll = F3(
+	function (appData, rowNum, colNum) {
+		return $author$project$Controls$sendScrollToClue(
+			A3($author$project$Controls$selectCell, appData, rowNum, colNum));
+	});
 var $author$project$Controls$updateCellData = F2(
 	function (appData, cellUpdateData) {
 		var _v0 = A2(
 			$author$project$Cell$getCellFromRowCol,
-			appData.cluegridData.grid,
+			appData.grid,
 			_Utils_Tuple2(cellUpdateData.cell.row, cellUpdateData.cell.col));
 		if (_v0.$ === 'Nothing') {
 			return appData;
 		} else {
 			var cell = _v0.a;
-			var newGrid = A3($author$project$Cell$updateCellEntry, cell, cellUpdateData.letter, appData.cluegridData.grid);
-			var cluegridData = appData.cluegridData;
-			var newCluegrid = _Utils_update(
-				cluegridData,
-				{grid: newGrid});
+			var newGrid = A3($author$project$Cell$updateCellEntry, cell, cellUpdateData.letter, appData.grid);
 			return _Utils_update(
 				appData,
-				{cluegridData: newCluegrid});
+				{grid: newGrid});
 		}
 	});
 var $author$project$Main$update = F2(
@@ -7071,10 +7082,9 @@ var $author$project$Main$update = F2(
 				if (msg.$ === 'FetchedData') {
 					var data = msg.a;
 					if (data.$ === 'Ok') {
-						var cluegridData = data.a;
+						var appData = data.a;
 						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								A3($author$project$Datatypes$AppData, cluegridData, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing)),
+							$author$project$Datatypes$Loaded(appData),
 							$elm$core$Platform$Cmd$none);
 					} else {
 						return _Utils_Tuple2($author$project$Datatypes$Failure, $elm$core$Platform$Cmd$none);
@@ -7091,10 +7101,7 @@ var $author$project$Main$update = F2(
 					case 'CellClicked':
 						var rowNum = msg.a;
 						var colNum = msg.b;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								A3($author$project$Controls$selectCell, appData, rowNum, colNum)),
-							$elm$core$Platform$Cmd$none);
+						return A3($author$project$Controls$selectCellAndScroll, appData, rowNum, colNum);
 					case 'ClueClicked':
 						var clueIndex = msg.a;
 						return _Utils_Tuple2(
@@ -7115,6 +7122,10 @@ var $author$project$Main$update = F2(
 			default:
 				return _Utils_Tuple2($author$project$Datatypes$Failure, $elm$core$Platform$Cmd$none);
 		}
+	});
+var $elm$browser$Browser$Document = F2(
+	function (title, body) {
+		return {body: body, title: title};
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -8193,72 +8204,142 @@ var $author$project$Cell$renderRow = F3(
 					},
 					row)));
 	});
+var $author$project$Cell$renderGrid = F3(
+	function (grid, activeClueIndex, activeCell) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('cluegrid-crossword-container')
+				]),
+			$elm$core$Array$toList(
+				A2(
+					$elm$core$Array$map,
+					function (row) {
+						return A3($author$project$Cell$renderRow, row, activeClueIndex, activeCell);
+					},
+					grid)));
+	});
 var $author$project$Controls$renderAppData = function (appData) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('cluegrid-fullscreen-container')
+				$elm$html$Html$Attributes$class('cluegrid-container')
 			]),
+		_List_fromArray(
+			[
+				A3($author$project$Cell$renderGrid, appData.grid, appData.activeClueIndex, appData.activeCell),
+				A3($author$project$Clue$renderCluesData, appData.clues, appData.grid, appData.activeClueIndex)
+			]));
+};
+var $author$project$Controls$renderHeaderCell = function (_v0) {
+	var letter = _v0.a;
+	var num = _v0.b;
+	var solution = function () {
+		if (letter === '') {
+			return '.';
+		} else {
+			return '';
+		}
+	}();
+	return A3(
+		$author$project$Cell$renderCell,
+		A7(
+			$author$project$Datatypes$Cell,
+			solution,
+			-1,
+			-1,
+			num,
+			$elm$core$Maybe$Nothing,
+			$elm$core$Maybe$Nothing,
+			$elm$core$Maybe$Just(letter)),
+		$elm$core$Maybe$Nothing,
+		$elm$core$Maybe$Nothing);
+};
+var $author$project$Controls$renderHeaderRow = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('cluegrid-header-row')
+		]),
+	A2(
+		$elm$core$List$map,
+		function (letter) {
+			return $author$project$Controls$renderHeaderCell(letter);
+		},
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'C',
+				$elm$core$Maybe$Just(3)),
+				_Utils_Tuple2('L', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2('U', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2('E', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2('', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2(
+				'G',
+				$elm$core$Maybe$Just(7)),
+				_Utils_Tuple2('R', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2('I', $elm$core$Maybe$Nothing),
+				_Utils_Tuple2('D', $elm$core$Maybe$Nothing)
+			])));
+var $author$project$Main$view = function (model) {
+	var body = function () {
+		switch (model.$) {
+			case 'Loaded':
+				var appData = model.a;
+				return $author$project$Controls$renderAppData(appData);
+			case 'Failure':
+				return A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Could not fetch data ‾\\_(ツ)_/‾')
+						]));
+			default:
+				return A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('loading data...')
+						]));
+		}
+	}();
+	return A2(
+		$elm$browser$Browser$Document,
+		'Cluegrid',
 		_List_fromArray(
 			[
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('cluegrid-container')
+						$elm$html$Html$Attributes$class('cluegrid-fullscreen-container')
 					]),
 				_List_fromArray(
 					[
+						$author$project$Controls$renderHeaderRow,
 						A2(
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('cluegrid-crossword-container')
+								$elm$html$Html$Attributes$class('cluegrid-application-container')
 							]),
-						$elm$core$Array$toList(
-							A2(
-								$elm$core$Array$map,
-								function (row) {
-									return A3($author$project$Cell$renderRow, row, appData.activeClueIndex, appData.activeCell);
-								},
-								appData.cluegridData.grid))),
-						A3($author$project$Clue$renderCluesData, appData.cluegridData.clues, appData.cluegridData.grid, appData.activeClueIndex)
+						_List_fromArray(
+							[body]))
 					]))
 			]));
 };
-var $author$project$Main$view = function (model) {
-	switch (model.$) {
-		case 'Loaded':
-			var appData = model.a;
-			return $author$project$Controls$renderAppData(appData);
-		case 'Failure':
-			return A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('cluegrid-fullscreen-container'),
-						$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Could not fetch data ‾\\_(ツ)_/‾')
-					]));
-		default:
-			return A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('cluegrid-fullscreen-container'),
-						$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('loading data...')
-					]));
-	}
-};
-var $author$project$Main$main = $elm$browser$Browser$element(
-	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
+var $author$project$Main$main = $elm$browser$Browser$application(
+	{init: $author$project$Main$init, onUrlChange: $author$project$Main$onUrlChange, onUrlRequest: $author$project$Main$onUrlRequest, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));

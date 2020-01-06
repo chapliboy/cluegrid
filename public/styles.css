@@ -5,13 +5,41 @@ body {
 
 .cluegrid-fullscreen-container {
   height: 100vh;
-  background: linear-gradient(120deg, #3be8b0dd, #1aafd0dd, #6a67cedd);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-evenly;
   align-items: center;
+  background: linear-gradient(120deg, #3be8b0dd, #1aafd0dd, #6a67cedd);
   --app-height: 85vh;
   --app-width: 85vw;
   --cell-size: calc( (var(--app-height)/15) - 8px);
+  --rem-size: calc(var(--cell-size)/3);
+}
+
+.cluegrid-header-row {
+  width: var(--app-width);
+  font-size: calc( 0.8 * var(--cell-size));
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.cluegrid-header-cell {
+  background-color: #ffffff99;
+  border-radius: calc(var(--rem-size) * 0.8);
+  position: relative;
+  border: 2px solid #ffffff00;
+  margin: 2px;
+  height: var(--cell-size);
+  width: var(--cell-size);
+  text-align: center;
+  color: #555;
+}
+
+.cluegrid-application-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .cluegrid-data-not-loaded {
@@ -62,13 +90,13 @@ body {
 .cluegrid-clue {
   min-height: calc (0.8 ** var(--cell-size));
   background-color: #ffffff99;
-  border-radius: 0.6rem;
-  padding: 1rem;
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
-  margin: 1rem;
-  margin-top: 0.1rem;
-  margin-bottom: 0.1rem;
+  border-radius: calc(0.6 * var(--rem-size));
+  padding: calc(1 * var(--rem-size));
+  padding-top: calc(0.2 * var(--rem-size));
+  padding-bottom: calc(0.2 * var(--rem-size));
+  margin: calc(1 * var(--rem-size));
+  margin-top: calc(0.1 * var(--rem-size));
+  margin-bottom: calc(0.1 * var(--rem-size));
   color: #555;
   display: flex;
   justify-content: flex-start;
@@ -105,7 +133,7 @@ body {
 
 .cluegrid-crossword-cell {
   background-color: #ffffff99;
-  border-radius: 0.6rem;
+  border-radius: calc(var(--rem-size) * 0.8);
   position: relative;
   border: 2px solid #ffffff00;
   margin: 2px;
@@ -116,7 +144,7 @@ body {
 }
 
 .cluegrid-crossword-cell-grid-number {
-  font-size: 0.6rem;
+  font-size: calc(var(--rem-size) * 0.8);
   position: absolute;
   top: 2px;
   left: 3px;
@@ -127,8 +155,8 @@ body {
 }
 
 .cluegrid-crossword-cell-solution {
-  padding-top: 0.35rem;
-  font-size: 1.6rem;
+  padding-top: calc(var(--rem-size) * 0.35);
+  font-size: calc(var(--rem-size) * 1.6);
   font-weight: 900;
   color: #33333388;
 }

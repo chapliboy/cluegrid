@@ -1,7 +1,7 @@
-module Cell exposing (crosswordCellisBlank, decodeGrid, getCellFromRowCol, isRowColEqual, renderRow, updateCellEntry, updateCellInRow)
+module Cell exposing (crosswordCellisBlank, decodeGrid, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry, updateCellInRow)
 
 import Array exposing (Array)
-import Datatypes exposing (Cell, Grid, Msg(..))
+import Datatypes exposing (ActiveCell, ActiveClueIndex, Cell, Grid, Msg(..))
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
 import Html.Events exposing (onClick)
@@ -38,7 +38,7 @@ listListCellToGrid l =
         )
 
 
-renderRow : Array Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
+renderRow : Array Cell -> ActiveClueIndex -> ActiveCell -> Html Msg
 renderRow row activeClueIndex activeCell =
     div
         [ class "cluegrid-crossword-row" ]
@@ -46,6 +46,22 @@ renderRow row activeClueIndex activeCell =
             (Array.map (\cell -> renderCell cell activeClueIndex activeCell)
                 row
             )
+        )
+
+
+renderGrid : Grid -> ActiveClueIndex -> ActiveCell -> Html Msg
+renderGrid grid activeClueIndex activeCell =
+    div
+        [ class "cluegrid-crossword-container" ]
+        (grid
+            |> Array.map
+                (\row ->
+                    renderRow
+                        row
+                        activeClueIndex
+                        activeCell
+                )
+            |> Array.toList
         )
 
 
@@ -116,7 +132,7 @@ isActiveCellClue cell activeClueIndex =
             False
 
 
-renderCell : Cell -> Maybe Int -> Maybe ( Int, Int ) -> Html Msg
+renderCell : Cell -> ActiveClueIndex -> ActiveCell -> Html Msg
 renderCell cell activeClueIndex activeCell =
     div
         [ classList

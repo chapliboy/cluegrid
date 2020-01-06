@@ -1,13 +1,17 @@
-port module Controls exposing (handleKeyInput, renderAppData, selectCell, setActiveClue, updateCellData)
+port module Controls exposing (handleKeyInput, renderAppData, renderHeaderRow, selectCell, selectCellAndScroll, setActiveClue, updateCellData)
 
 import Array
 import Browser.Dom as Dom
-import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderRow, updateCellEntry)
+import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry)
 import Clue exposing (getClueId, renderCluesData)
-import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..), RowCol)
+import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..), RowCol, SocketMessage)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
 import Task
+
+
+
+-- port sendMessage : SocketMessage -> Cmd msg
 
 
 port sendCellUpdate : CellUpdateData -> Cmd msg
@@ -15,7 +19,7 @@ port sendCellUpdate : CellUpdateData -> Cmd msg
 
 updateCellData : AppData -> CellUpdateData -> AppData
 updateCellData appData cellUpdateData =
-    case getCellFromRowCol appData.cluegridData.grid ( cellUpdateData.cell.row, cellUpdateData.cell.col ) of
+    case getCellFromRowCol appData.grid ( cellUpdateData.cell.row, cellUpdateData.cell.col ) of
         Nothing ->
             appData
 
@@ -24,24 +28,18 @@ updateCellData appData cellUpdateData =
                 newGrid =
                     updateCellEntry cell
                         cellUpdateData.letter
-                        appData.cluegridData.grid
-
-                cluegridData =
-                    appData.cluegridData
-
-                newCluegrid =
-                    { cluegridData | grid = newGrid }
+                        appData.grid
             in
-            { appData | cluegridData = newCluegrid }
+            { appData | grid = newGrid }
 
 
 setActiveClue : AppData -> Int -> AppData
 setActiveClue appData clueIndex =
-    case Array.get clueIndex (Array.fromList appData.cluegridData.clues) of
+    case Array.get clueIndex (Array.fromList appData.clues) of
         Just clue ->
             case
                 getCellFromRowCol
-                    appData.cluegridData.grid
+                    appData.grid
                     ( clue.startRow, clue.startCol )
             of
                 Just cell ->
@@ -84,8 +82,6 @@ scrollToClue appData =
     -- we need to use both getElement and getViewport. This whole thing would be a
     -- lot simpler if we could set the parent in getElement
     -- TODO (26 Dec 2019 sam): Clean up the code, make it less nested
-    -- TODO (26 Dec 2019 sam): Add some more logic to scrolling logic. Don't keep
-    -- scrolling to the top.
     let
         clueIndex =
             case appData.activeClueIndex of
@@ -105,11 +101,30 @@ scrollToClue appData =
                             Dom.getViewportOf "cluegrid-clues-scrollable-area"
                                 |> Task.andThen
                                     (\scrollAreaViewport ->
-                                        Dom.setViewportOf "cluegrid-clues-scrollable-area" 0 (scrollAreaViewport.viewport.y + clue.element.y - scrollAreaElement.element.y)
+                                        let
+                                            scrollPortHeight =
+                                                getScrollPortHeight scrollAreaViewport clue scrollAreaElement
+                                        in
+                                        Dom.setViewportOf "cluegrid-clues-scrollable-area" 0 scrollPortHeight
                                     )
                         )
             )
         |> Task.attempt (\_ -> SetScroll)
+
+
+getScrollPortHeight : Dom.Viewport -> Dom.Element -> Dom.Element -> Float
+getScrollPortHeight viewport clue scrollArea =
+    if clue.element.y < scrollArea.element.y then
+        -- clue is above... scroll up
+        viewport.viewport.y + clue.element.y - scrollArea.element.y
+
+    else if (clue.element.y + clue.element.height) > (scrollArea.element.height + scrollArea.element.y) then
+        -- clue is below... scroll down
+        viewport.viewport.y + clue.element.y + clue.element.height - scrollArea.element.y - scrollArea.element.height
+
+    else
+        -- clue is in window... don't scroll
+        viewport.viewport.y
 
 
 sendScrollToClue : AppData -> ( Model, Cmd Msg )
@@ -140,7 +155,7 @@ changeClueIndex appData change =
                     0
 
                 Just index ->
-                    modBy (List.length appData.cluegridData.clues) (index + change)
+                    modBy (List.length appData.clues) (index + change)
     in
     setActiveClue appData clueIndex
 
@@ -243,20 +258,14 @@ changeActiveEntry : AppData -> Maybe String -> AppData
 changeActiveEntry appData letter =
     case appData.activeCell of
         Just ( row, col ) ->
-            case getCellFromRowCol appData.cluegridData.grid ( row, col ) of
+            case getCellFromRowCol appData.grid ( row, col ) of
                 Just cellAtRowCol ->
                     let
                         grid =
-                            updateCellEntry cellAtRowCol letter appData.cluegridData.grid
-
-                        cluegridData =
-                            appData.cluegridData
-
-                        updatedClueGridData =
-                            { cluegridData | grid = grid }
+                            updateCellEntry cellAtRowCol letter appData.grid
 
                         updatedAppData =
-                            { appData | cluegridData = updatedClueGridData }
+                            { appData | grid = grid }
                     in
                     case letter of
                         Just _ ->
@@ -279,7 +288,7 @@ moveCell originalAppData appData rowChange colChange =
             selectCell appData 0 0
 
         Just ( row, col ) ->
-            case getCellFromRowCol appData.cluegridData.grid ( row + rowChange, col + colChange ) of
+            case getCellFromRowCol appData.grid ( row + rowChange, col + colChange ) of
                 Just cellAtRowCol ->
                     if crosswordCellisBlank cellAtRowCol then
                         moveCell
@@ -322,7 +331,7 @@ moveNext : AppData -> AppData
 moveNext appData =
     case appData.activeClueIndex of
         Just clueIndex ->
-            case Array.get clueIndex (Array.fromList appData.cluegridData.clues) of
+            case Array.get clueIndex (Array.fromList appData.clues) of
                 Just clue ->
                     case clue.direction of
                         Across ->
@@ -342,7 +351,7 @@ movePrevious : AppData -> AppData
 movePrevious appData =
     case appData.activeClueIndex of
         Just clueIndex ->
-            case Array.get clueIndex (Array.fromList appData.cluegridData.clues) of
+            case Array.get clueIndex (Array.fromList appData.clues) of
                 Just clue ->
                     case clue.direction of
                         Across ->
@@ -360,10 +369,6 @@ movePrevious appData =
 
 keyToKeyboardInput : String -> KeyboardInput
 keyToKeyboardInput code =
-    let
-        _ =
-            Debug.log "arrow code" code
-    in
     if String.startsWith "Arrow" code then
         case code of
             "ArrowRight" ->
@@ -488,7 +493,7 @@ updateActiveClue activeClueIndex cell activeCell clues =
 
 selectCell : AppData -> Int -> Int -> AppData
 selectCell appData rowNum colNum =
-    case getCellFromRowCol appData.cluegridData.grid ( rowNum, colNum ) of
+    case getCellFromRowCol appData.grid ( rowNum, colNum ) of
         Just cellAtRowCol ->
             if crosswordCellisBlank cellAtRowCol then
                 appData
@@ -500,7 +505,7 @@ selectCell appData rowNum colNum =
                             appData.activeClueIndex
                             cellAtRowCol
                             appData.activeCell
-                            appData.cluegridData.clues
+                            appData.clues
                     , activeCell = Just ( rowNum, colNum )
                 }
 
@@ -508,20 +513,59 @@ selectCell appData rowNum colNum =
             appData
 
 
+selectCellAndScroll : AppData -> Int -> Int -> ( Model, Cmd Msg )
+selectCellAndScroll appData rowNum colNum =
+    selectCell appData rowNum colNum
+        |> sendScrollToClue
+
+
+renderHeaderCell : ( String, Maybe Int ) -> Html Msg
+renderHeaderCell ( letter, num ) =
+    let
+        solution =
+            case letter of
+                "" ->
+                    "."
+
+                _ ->
+                    ""
+    in
+    renderCell
+        (Cell
+            solution
+            -1
+            -1
+            num
+            Nothing
+            Nothing
+            (Just letter)
+        )
+        Nothing
+        Nothing
+
+
+renderHeaderRow : Html Msg
+renderHeaderRow =
+    div
+        [ class "cluegrid-header-row" ]
+        ([ ( "C", Just 3 )
+         , ( "L", Nothing )
+         , ( "U", Nothing )
+         , ( "E", Nothing )
+         , ( "", Nothing )
+         , ( "G", Just 7 )
+         , ( "R", Nothing )
+         , ( "I", Nothing )
+         , ( "D", Nothing )
+         ]
+            |> List.map (\letter -> renderHeaderCell letter)
+        )
+
+
 renderAppData : AppData -> Html Msg
 renderAppData appData =
     div
-        [ class "cluegrid-fullscreen-container" ]
-        [ div [ class "cluegrid-container" ]
-            [ div
-                [ class "cluegrid-crossword-container"
-                ]
-                (Array.toList
-                    (Array.map
-                        (\row -> renderRow row appData.activeClueIndex appData.activeCell)
-                        appData.cluegridData.grid
-                    )
-                )
-            , renderCluesData appData.cluegridData.clues appData.cluegridData.grid appData.activeClueIndex
-            ]
+        [ class "cluegrid-container" ]
+        [ renderGrid appData.grid appData.activeClueIndex appData.activeCell
+        , renderCluesData appData.clues appData.grid appData.activeClueIndex
         ]
