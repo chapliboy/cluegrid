@@ -5,7 +5,9 @@
   <title>Main</title>
   <style>body { padding: 0; margin: 0; }</style>
   <link href="https://fonts.googleapis.com/css?family=Nunito:300,900i&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel='stylesheet' type='text/css' href='styles.css'>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
 </head>
 <body>
   <div id='cluegrid-app'></div>
@@ -29,43 +31,65 @@
       }
     })
 
-    // let ws = new WebSocket('ws://127.0.0.1:8080/?name=Hedwig');
-    let ws = new WebSocket('ws://owlery.chapliboy.com/?name=Redwig');
+    function setup_websocket() {
+      // let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
+      let SOCKET_LINK = 'ws://127.0.0.1:8080/?name=Medwig'
+      var ws = new WebSocket(SOCKET_LINK);
+    
+      ws.onopen = function () {
+        while (msgs.length > 0) {
+          qMsg = msgs.pop();
+          ws_send(qMsg[0], qMsg[1])
+        }
+      }
+      ws.onmessage = function(message) {
+        message = JSON.parse(message.data);
+        if (message.message == 'update_entry') {
+          app.ports.recieveCellUpdate.send(message.data);
+        }
+        else if (message.message == 'update_other_clue') {
+          console.log('updating other clue', message.data)
+          app.ports.recieveOtherClueUpdate.send(message.data); 
+        }
+      }
+      ws.onclose = function(message) {
+        console.log('socket closed', message);
+        // restart websocket if it closes, and rerequest cells if we missed anything
+        setup_websocket()
+        ws_send('request_all_cells', '');
+      }
 
-    // If we try to send a message before the socket is ready, it causes some
-    // issues. So we want to save all the messages that need to be sent, and then
-    // send them once the socket is opened
-    var msgs = []
-    function ws_send(message, data) {
-      if (ws.readyState !== 1) {
-        msgs.push([message, data])
-      } else {
-        ws.send(JSON.stringify({message: message, data: data}));
+      // If we try to send a message before the socket is ready, it causes some
+      // issues. So we want to save all the messages that need to be sent, and then
+      // send them once the socket is opened
+      var msgs = []
+      function ws_send(message, data) {
+        if (ws.readyState !== 1) {
+          msgs.push([message, data])
+        } else {
+          ws.send(JSON.stringify({message: message, data: data}));
+        }
       }
+
+      app.ports.sendCellUpdate.subscribe(function(data) {
+        ws_send('update_entry', data);
+      })
+
+      app.ports.sendRequestAllCells.subscribe(function(data) {
+        console.log('requesting all cells')
+        ws_send('request_all_cells', data);
+      })
+
+      app.ports.sendClueIndexUpdate.subscribe(function(data) {
+        console.log('updating active clue', data)
+        ws_send('update_active_clue', data)
+      })
     }
-    ws.onopen = function () {
-      while (msgs.length > 0) {
-        qMsg = msgs.pop();
-        ws_send(qMsg[0], qMsg[1])
-      }
-    }
+    setup_websocket()
+
     // app.ports.sendJoinChannel.subscribe(function(channelName) {
     //   ws_send('join_channel', channelName);
     // })
-    app.ports.sendCellUpdate.subscribe(function(data) {
-      ws_send('update_entry', data);
-    })
-    app.ports.sendRequestAllCells.subscribe(function(data) {
-      console.log('requesting all cells')
-      ws_send('request_all_cells', data);
-    })
-    ws.onmessage = function(message) {
-      console.log(message)
-      message = JSON.parse(message.data);
-      if (message.message == 'update_entry') {
-        app.ports.recieveCellUpdate.send(message.data);
-      }
-    }
   </script>
 </body>
 </html>

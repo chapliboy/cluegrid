@@ -16,24 +16,91 @@ body {
   --rem-size: calc(var(--cell-size)/3);
 }
 
-.cluegrid-header-row {
+.cluegrid-header-container {
+  display: flex;
   width: var(--app-width);
+  justify-content: space-between;
+}
+
+.cluegrid-header-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cluegrid-header-button:hover {
+  cursor: pointer;
+}
+.cluegrid-header-button {
+  height: var(--cell-size);
+  margin-left: calc( 0.3 * var(--cell-size));
+  border-radius: var(--cell-size);
+  border: solid 1px #ffffff99;
+  text-align: center;
+  padding-left: var(--rem-size);
+  padding-right: var(--rem-size);
+  color: #ffffff99;
+  font-size: calc(var(--rem-size) );
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cluegrid-header-row {
   font-size: calc( 0.8 * var(--cell-size));
   display: flex;
   justify-content: flex-start;
   align-items: center;
 }
 
-.cluegrid-header-cell {
-  background-color: #ffffff99;
-  border-radius: calc(var(--rem-size) * 0.8);
-  position: relative;
-  border: 2px solid #ffffff00;
-  margin: 2px;
-  height: var(--cell-size);
-  width: var(--cell-size);
-  text-align: center;
+.cluegrid-modal-background {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 100vh;
+  width: 100vw;
+  background-color: #99cccccc;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.cluegrid-modal-container {
+  width: 40vw;
+  background-color: #ffffffcc;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-around;
+  position: absolute;
+  top: 50vh;
+  left: 50vw;
+  transform: translate(-50%, -50%);
+  border-radius: calc(var(--cell-size) * 0.3);
   color: #555;
+  padding: 30px;
+}
+
+.cluegrid-modal-header {
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.cluegrid-modal-info-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.cluegrid-modal-info {
+  font-size: 1rem;
+}
+
+.cluegrid-modal-bold {
+  font-weight: 900;
+}
+
+.cluegrid-modal-vert-spacer {
+  height: 1rem;
 }
 
 .cluegrid-application-container {
@@ -43,6 +110,11 @@ body {
 }
 
 .cluegrid-data-not-loaded {
+  height: var(--app-height);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
   font-size: 4rem;
   font-weight: 900;
   color: #ffffff99;
@@ -159,6 +231,10 @@ body {
   font-size: calc(var(--rem-size) * 1.6);
   font-weight: 900;
   color: #33333388;
+}
+
+.cluegrid-crossword-cell-is-other-clue {
+  background-color: #ccffcc99;
 }
 
 .cluegrid-crossword-cell-is-active-clue {

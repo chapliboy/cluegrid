@@ -2,13 +2,13 @@ module Data exposing (decodeAppData)
 
 import Cell exposing (decodeGrid)
 import Clue exposing (decodeClues)
-import Datatypes exposing (AppData, CluegridInfo, CluegridSize)
-import Json.Decode exposing (Decoder, field, int, map2, map5, map6, string, succeed)
+import Datatypes exposing (AppData, CluegridInfo, CluegridSize, ModalContents(..))
+import Json.Decode exposing (Decoder, field, int, map2, map5, map8, string, succeed)
 
 
 decodeAppData : Decoder AppData
 decodeAppData =
-    map6 AppData
+    map8 AppData
         (field "clues" decodeClues)
         (field "grid" decodeGrid)
         (map2 CluegridSize
@@ -23,6 +23,8 @@ decodeAppData =
             (field "info" (field "copyright" string))
         )
         (succeed Nothing)
+        (succeed Nothing)
+        (succeed Empty)
         (succeed Nothing)
 
 

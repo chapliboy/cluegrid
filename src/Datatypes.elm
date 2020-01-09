@@ -23,13 +23,13 @@ module Datatypes exposing
     , ChannelName
     , Clue
     , ClueDirection(..)
-    , CluegridData
     , CluegridInfo
     , CluegridSize
     , Clues
     , ControlKey(..)
     , Grid
     , KeyboardInput(..)
+    , ModalContents(..)
     , Model(..)
     , Msg(..)
     , RowCol
@@ -37,6 +37,7 @@ module Datatypes exposing
     )
 
 import Array exposing (Array)
+import Html exposing (Html)
 import Http
 import Json.Encode as E
 
@@ -55,6 +56,11 @@ type Msg
     | CellUpdate CellUpdateData
     | SetScroll
     | HandleSocketMessage E.Value
+    | CloseModal
+    | OtherClueUpdated ActiveClueIndex
+    | SolveActiveClue
+    | CheckActiveClue
+    | SetModalInfo
     | NoOp
 
 
@@ -89,14 +95,6 @@ type alias Clues =
 type ClueDirection
     = Across
     | Down
-
-
-type alias CluegridData =
-    { clues : Clues
-    , grid : Grid
-    , size : CluegridSize
-    , info : CluegridInfo
-    }
 
 
 type alias Cell =
@@ -147,6 +145,11 @@ type alias CluegridInfo =
     }
 
 
+type ModalContents
+    = Empty
+    | Info
+
+
 type alias AppData =
     { clues : Clues
     , grid : Grid
@@ -154,6 +157,8 @@ type alias AppData =
     , cluegridInfo : CluegridInfo
     , activeClueIndex : ActiveClueIndex
     , activeCell : ActiveCell
+    , modal : ModalContents
+    , otherClueIndex : ActiveClueIndex
     }
 
 
@@ -170,6 +175,7 @@ type ControlKey
     | BackspaceKey
     | TabKey
     | ShiftTabKey
+    | EscapeKey
 
 
 type KeyboardInput

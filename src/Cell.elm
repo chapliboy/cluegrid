@@ -38,19 +38,25 @@ listListCellToGrid l =
         )
 
 
-renderRow : Array Cell -> ActiveClueIndex -> ActiveCell -> Html Msg
-renderRow row activeClueIndex activeCell =
+renderRow : Array Cell -> ActiveClueIndex -> ActiveClueIndex -> ActiveCell -> Html Msg
+renderRow row activeClueIndex otherActiveClueIndex activeCell =
     div
         [ class "cluegrid-crossword-row" ]
         (Array.toList
-            (Array.map (\cell -> renderCell cell activeClueIndex activeCell)
+            (Array.map
+                (\cell ->
+                    renderCell cell
+                        activeClueIndex
+                        otherActiveClueIndex
+                        activeCell
+                )
                 row
             )
         )
 
 
-renderGrid : Grid -> ActiveClueIndex -> ActiveCell -> Html Msg
-renderGrid grid activeClueIndex activeCell =
+renderGrid : Grid -> ActiveClueIndex -> ActiveClueIndex -> ActiveCell -> Html Msg
+renderGrid grid activeClueIndex otherActiveClueIndex activeCell =
     div
         [ class "cluegrid-crossword-container" ]
         (grid
@@ -59,6 +65,7 @@ renderGrid grid activeClueIndex activeCell =
                     renderRow
                         row
                         activeClueIndex
+                        otherActiveClueIndex
                         activeCell
                 )
             |> Array.toList
@@ -132,13 +139,14 @@ isActiveCellClue cell activeClueIndex =
             False
 
 
-renderCell : Cell -> ActiveClueIndex -> ActiveCell -> Html Msg
-renderCell cell activeClueIndex activeCell =
+renderCell : Cell -> ActiveClueIndex -> ActiveClueIndex -> ActiveCell -> Html Msg
+renderCell cell activeClueIndex otherActiveClueIndex activeCell =
     div
         [ classList
             [ ( "cluegrid-crossword-cell", True )
             , ( "cluegrid-crossword-cell-is-blank", crosswordCellisBlank cell )
             , ( "cluegrid-crossword-cell-is-active", isActiveCell cell activeCell )
+            , ( "cluegrid-crossword-cell-is-other-clue", isActiveCellClue cell otherActiveClueIndex )
             , ( "cluegrid-crossword-cell-is-active-clue", isActiveCellClue cell activeClueIndex )
             ]
         , onClick (CellClicked cell.row cell.col)

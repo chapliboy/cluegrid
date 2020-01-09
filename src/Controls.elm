@@ -1,12 +1,13 @@
-port module Controls exposing (handleKeyInput, renderAppData, renderHeaderRow, selectCell, selectCellAndScroll, setActiveClue, updateCellData)
+port module Controls exposing (checkActiveClue, handleKeyInput, renderAppData, renderHeaderRow, selectCell, selectCellAndScroll, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 
 import Array
 import Browser.Dom as Dom
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry)
 import Clue exposing (getClueId, renderCluesData)
-import Datatypes exposing (AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), CluegridData, Clues, ControlKey(..), KeyboardInput(..), Model(..), Msg(..), RowCol, SocketMessage)
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (class, classList)
+import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), Clues, ControlKey(..), KeyboardInput(..), ModalContents(..), Model(..), Msg(..), RowCol, SocketMessage)
+import Html exposing (Html, a, div, i, text)
+import Html.Attributes exposing (class, classList, href)
+import Html.Events exposing (onClick)
 import Task
 
 
@@ -17,8 +18,16 @@ import Task
 port sendCellUpdate : CellUpdateData -> Cmd msg
 
 
-updateCellData : AppData -> CellUpdateData -> AppData
-updateCellData appData cellUpdateData =
+port sendClueIndexUpdate : ActiveClueIndex -> Cmd msg
+
+
+updateOtherClue : ActiveClueIndex -> AppData -> AppData
+updateOtherClue otherClueIndex appData =
+    { appData | otherClueIndex = otherClueIndex }
+
+
+updateCellData : CellUpdateData -> AppData -> AppData
+updateCellData cellUpdateData appData =
     case getCellFromRowCol appData.grid ( cellUpdateData.cell.row, cellUpdateData.cell.col ) of
         Nothing ->
             appData
@@ -91,25 +100,28 @@ scrollToClue appData =
                 Nothing ->
                     0
     in
-    getClueId clueIndex
-        |> Dom.getElement
-        |> Task.andThen
-            (\clue ->
-                Dom.getElement "cluegrid-clues-scrollable-area"
-                    |> Task.andThen
-                        (\scrollAreaElement ->
-                            Dom.getViewportOf "cluegrid-clues-scrollable-area"
-                                |> Task.andThen
-                                    (\scrollAreaViewport ->
-                                        let
-                                            scrollPortHeight =
-                                                getScrollPortHeight scrollAreaViewport clue scrollAreaElement
-                                        in
-                                        Dom.setViewportOf "cluegrid-clues-scrollable-area" 0 scrollPortHeight
-                                    )
-                        )
-            )
-        |> Task.attempt (\_ -> SetScroll)
+    Cmd.batch
+        [ getClueId clueIndex
+            |> Dom.getElement
+            |> Task.andThen
+                (\clue ->
+                    Dom.getElement "cluegrid-clues-scrollable-area"
+                        |> Task.andThen
+                            (\scrollAreaElement ->
+                                Dom.getViewportOf "cluegrid-clues-scrollable-area"
+                                    |> Task.andThen
+                                        (\scrollAreaViewport ->
+                                            let
+                                                scrollPortHeight =
+                                                    getScrollPortHeight scrollAreaViewport clue scrollAreaElement
+                                            in
+                                            Dom.setViewportOf "cluegrid-clues-scrollable-area" 0 scrollPortHeight
+                                        )
+                            )
+                )
+            |> Task.attempt (\_ -> SetScroll)
+        , sendClueIndexUpdate appData.activeClueIndex
+        ]
 
 
 getScrollPortHeight : Dom.Viewport -> Dom.Element -> Dom.Element -> Float
@@ -203,6 +215,9 @@ handleKeyInput key appData =
                 ShiftTabKey ->
                     selectPreviousClue appData
                         |> sendScrollToClue
+
+                EscapeKey ->
+                    ( Loaded { appData | modal = Empty }, Cmd.none )
 
                 _ ->
                     appData
@@ -401,6 +416,9 @@ keyToKeyboardInput code =
     else if code == "ShiftTab" then
         ControlKey ShiftTabKey
 
+    else if code == "Escape" then
+        ControlKey EscapeKey
+
     else
         UnsupportedKey
 
@@ -519,6 +537,116 @@ selectCellAndScroll appData rowNum colNum =
         |> sendScrollToClue
 
 
+isPartOfClue : Int -> Cell -> Bool
+isPartOfClue index cell =
+    let
+        isAcross =
+            case cell.acrossClueIndex of
+                Just acrossIndex ->
+                    acrossIndex == index
+
+                Nothing ->
+                    False
+
+        isDown =
+            case cell.downClueIndex of
+                Just downIndex ->
+                    downIndex == index
+
+                Nothing ->
+                    False
+    in
+    isAcross || isDown
+
+
+getSolution : Cell -> CellUpdateData
+getSolution cell =
+    CellUpdateData
+        (RowCol cell.row cell.col)
+        (Just cell.solution)
+
+
+checkCorrect : Cell -> CellUpdateData
+checkCorrect cell =
+    let
+        soln =
+            case cell.entry of
+                Nothing ->
+                    Nothing
+
+                Just letter ->
+                    if letter == cell.solution then
+                        Just letter
+
+                    else
+                        Nothing
+    in
+    CellUpdateData
+        (RowCol cell.row cell.col)
+        soln
+
+
+solveActiveClue : AppData -> ( Model, Cmd Msg )
+solveActiveClue appData =
+    -- TODO (09 Jan 2020 sam): See if the solution can be shown locally as well
+    -- Currently I'm not doing it because the only way I know how would be to
+    -- loop through the whole grid twice and get the updateData and newAppData
+    -- and that feels too clunky. And the grid looping is all nested and ugly
+    case appData.activeClueIndex of
+        Nothing ->
+            ( Loaded appData, Cmd.none )
+
+        Just index ->
+            let
+                clueCells =
+                    appData.grid
+                        |> Array.foldl Array.append (Array.fromList [])
+                        |> Array.filter (\cell -> isPartOfClue index cell)
+
+                updateData =
+                    clueCells
+                        |> Array.map (\cell -> getSolution cell)
+
+                newData =
+                    updateData
+                        |> Array.foldl updateCellData appData
+            in
+            ( Loaded newData
+            , Cmd.batch
+                (updateData
+                    |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
+                    |> Array.toList
+                )
+            )
+
+
+checkActiveClue : AppData -> ( Model, Cmd Msg )
+checkActiveClue appData =
+    case appData.activeClueIndex of
+        Nothing ->
+            ( Loaded appData, Cmd.none )
+
+        Just index ->
+            let
+                updateData =
+                    appData.grid
+                        |> Array.foldl Array.append (Array.fromList [])
+                        |> Array.filter (\cell -> isPartOfClue index cell)
+                        |> Array.map (\cell -> checkCorrect cell)
+
+                newData =
+                    updateData
+                        |> Array.foldl updateCellData appData
+            in
+            ( Loaded newData
+            , Cmd.batch
+                (updateData
+                    |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
+                    |> Array.toList
+                )
+            )
+
+
 renderHeaderCell : ( String, Maybe Int ) -> Html Msg
 renderHeaderCell ( letter, num ) =
     let
@@ -542,30 +670,78 @@ renderHeaderCell ( letter, num ) =
         )
         Nothing
         Nothing
+        Nothing
 
 
 renderHeaderRow : Html Msg
 renderHeaderRow =
     div
-        [ class "cluegrid-header-row" ]
-        ([ ( "C", Just 3 )
-         , ( "L", Nothing )
-         , ( "U", Nothing )
-         , ( "E", Nothing )
-         , ( "", Nothing )
-         , ( "G", Just 7 )
-         , ( "R", Nothing )
-         , ( "I", Nothing )
-         , ( "D", Nothing )
-         ]
-            |> List.map (\letter -> renderHeaderCell letter)
-        )
+        [ class "cluegrid-header-container" ]
+        [ div
+            [ class "cluegrid-header-row" ]
+            ([ ( "C", Just 3 )
+             , ( "L", Nothing )
+             , ( "U", Nothing )
+             , ( "E", Nothing )
+             , ( "", Nothing )
+             , ( "G", Just 7 )
+             , ( "R", Nothing )
+             , ( "I", Nothing )
+             , ( "D", Nothing )
+             ]
+                |> List.map (\letter -> renderHeaderCell letter)
+            )
+        , div
+            [ class "cluegrid-header-buttons" ]
+            [ div [ class "cluegrid-header-button", onClick SolveActiveClue ]
+                [ text "SOLVE CLUE" ]
+            , div [ class "cluegrid-header-button", onClick CheckActiveClue ]
+                [ text "CHECK CLUE" ]
+            , div [ class "cluegrid-header-button", onClick SetModalInfo ]
+                [ text "INFO" ]
+            ]
+        ]
+
+
+renderModal : AppData -> Html Msg
+renderModal appData =
+    case appData.modal of
+        Info ->
+            div
+                [ class "cluegrid-modal-background"
+                , onClick CloseModal
+                ]
+                [ div [ class "cluegrid-modal-container" ]
+                    [ div [ class "cluegrid-modal-header" ] [ text "cluegrid" ]
+                    , div [ class "cluegrid-modal-vert-spacer" ] []
+                    , div [ class "cluegrid-modal-vert-spacer" ] []
+                    , div [ class "cluegrid-modal-info-title" ] [ text appData.cluegridInfo.title ]
+                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Author: " ++ appData.cluegridInfo.author) ]
+                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Editor: " ++ appData.cluegridInfo.editor) ]
+                    , div [ class "cluegrid-modal-info" ] [ text appData.cluegridInfo.copyright ]
+                    , div [ class "cluegrid-modal-vert-spacer" ] []
+                    , div [ class "cluegrid-modal-vert-spacer" ] []
+                    , div [ class "cluegrid-modal-vert-spacer" ] []
+                    , div [ class "cluegrid-modal-info" ]
+                        [ text "data from "
+                        , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
+                        ]
+                    , div [ class "cluegrid-modal-info" ]
+                        [ text "created with ❤️ by "
+                        , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
+                        ]
+                    ]
+                ]
+
+        Empty ->
+            div [] []
 
 
 renderAppData : AppData -> Html Msg
 renderAppData appData =
     div
         [ class "cluegrid-container" ]
-        [ renderGrid appData.grid appData.activeClueIndex appData.activeCell
+        [ renderGrid appData.grid appData.activeClueIndex appData.otherClueIndex appData.activeCell
         , renderCluesData appData.clues appData.grid appData.activeClueIndex
+        , renderModal appData
         ]

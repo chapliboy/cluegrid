@@ -3,10 +3,10 @@ port module Main exposing (..)
 import Browser
 import Browser.Events
 import Browser.Navigation exposing (Key)
-import Controls exposing (handleKeyInput, renderAppData, renderHeaderRow, selectCellAndScroll, setActiveClue, updateCellData)
+import Controls exposing (checkActiveClue, handleKeyInput, renderAppData, renderHeaderRow, selectCellAndScroll, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 import Data exposing (decodeAppData)
-import Datatypes exposing (AppData, CellUpdateData, ChannelName, CluegridData, Clues, Model(..), Msg(..), SocketMessage)
-import Html exposing (Html, div, text)
+import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelName, Clues, ModalContents(..), Model(..), Msg(..), SocketMessage)
+import Html exposing (div, text)
 import Html.Attributes exposing (class)
 import Http
 import Json.Decode exposing (field, map, string)
@@ -18,6 +18,9 @@ port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
 
 
 port recieveKeyPress : (String -> msg) -> Sub msg
+
+
+port recieveOtherClueUpdate : (ActiveClueIndex -> msg) -> Sub msg
 
 
 port sendRequestAllCells : String -> Cmd msg
@@ -99,7 +102,26 @@ update msg model =
                 -- only be fetched once. Will have to change this if we decide that
                 -- we want to change the data.
                 CellUpdate cellUpdateData ->
-                    ( Loaded (updateCellData appData cellUpdateData), Cmd.none )
+                    ( Loaded (updateCellData cellUpdateData appData), Cmd.none )
+
+                CloseModal ->
+                    ( Loaded { appData | modal = Empty }, Cmd.none )
+
+                SetModalInfo ->
+                    ( Loaded { appData | modal = Info }, Cmd.none )
+
+                SolveActiveClue ->
+                    solveActiveClue appData
+
+                CheckActiveClue ->
+                    checkActiveClue appData
+
+                HandleSocketMessage message ->
+                    -- TODO (09 Jan 2020 sam): Learn how to decode this message here
+                    ( Loaded appData, Cmd.none )
+
+                OtherClueUpdated otherClueIndex ->
+                    ( Loaded (updateOtherClue otherClueIndex appData), Cmd.none )
 
                 _ ->
                     ( Loaded appData, Cmd.none )
@@ -114,6 +136,7 @@ subscriptions model =
         [ recieveCellUpdate CellUpdate
         , recieveKeyPress KeyPressed
         , recieveSocketMessage HandleSocketMessage
+        , recieveOtherClueUpdate OtherClueUpdated
         ]
 
 
