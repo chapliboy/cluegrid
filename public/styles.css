@@ -54,7 +54,13 @@ body {
   align-items: center;
 }
 
+.cluegrid-modal {
+  opacity: 0;
+  transition: opacity .5s linear;
+}
+
 .cluegrid-modal-background {
+  opacity: 1;
   position: absolute;
   top: 0px;
   left: 0px;

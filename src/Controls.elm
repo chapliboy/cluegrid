@@ -723,38 +723,47 @@ renderHeaderRow =
         ]
 
 
-renderModal : AppData -> Html Msg
-renderModal appData =
-    case appData.modal of
+showModal : ModalContents -> Bool
+showModal modal =
+    case modal of
         Info ->
-            div
-                [ class "cluegrid-modal-background"
-                , onClick CloseModal
-                ]
-                [ div [ class "cluegrid-modal-container" ]
-                    [ div [ class "cluegrid-modal-header" ] [ text "cluegrid" ]
-                    , div [ class "cluegrid-modal-vert-spacer" ] []
-                    , div [ class "cluegrid-modal-vert-spacer" ] []
-                    , div [ class "cluegrid-modal-info-title" ] [ text appData.cluegridInfo.title ]
-                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Author: " ++ appData.cluegridInfo.author) ]
-                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Editor: " ++ appData.cluegridInfo.editor) ]
-                    , div [ class "cluegrid-modal-info" ] [ text appData.cluegridInfo.copyright ]
-                    , div [ class "cluegrid-modal-vert-spacer" ] []
-                    , div [ class "cluegrid-modal-vert-spacer" ] []
-                    , div [ class "cluegrid-modal-vert-spacer" ] []
-                    , div [ class "cluegrid-modal-info" ]
-                        [ text "data from "
-                        , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
-                        ]
-                    , div [ class "cluegrid-modal-info" ]
-                        [ text "created with ❤️ by "
-                        , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
-                        ]
-                    ]
-                ]
+            True
 
         Empty ->
-            div [] []
+            False
+
+
+renderModal : AppData -> Html Msg
+renderModal appData =
+    -- NOTE (10 Jan 2020 sam): Structured this way so that we can animate modal
+    -- closing. Would have to change it to some other way if we want to support
+    -- multiple different modals
+    div
+        [ class "cluegrid-modal"
+        , classList [ ( "cluegrid-modal-background", showModal appData.modal ) ]
+        , onClick CloseModal
+        ]
+        [ div [ class "cluegrid-modal-container" ]
+            [ div [ class "cluegrid-modal-header" ] [ text "cluegrid" ]
+            , div [ class "cluegrid-modal-vert-spacer" ] []
+            , div [ class "cluegrid-modal-vert-spacer" ] []
+            , div [ class "cluegrid-modal-info-title" ] [ text appData.cluegridInfo.title ]
+            , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Author: " ++ appData.cluegridInfo.author) ]
+            , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Editor: " ++ appData.cluegridInfo.editor) ]
+            , div [ class "cluegrid-modal-info" ] [ text appData.cluegridInfo.copyright ]
+            , div [ class "cluegrid-modal-vert-spacer" ] []
+            , div [ class "cluegrid-modal-vert-spacer" ] []
+            , div [ class "cluegrid-modal-vert-spacer" ] []
+            , div [ class "cluegrid-modal-info" ]
+                [ text "data from "
+                , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
+                ]
+            , div [ class "cluegrid-modal-info" ]
+                [ text "created with ❤️ by "
+                , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
+                ]
+            ]
+        ]
 
 
 renderAppData : AppData -> Html Msg

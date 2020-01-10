@@ -8684,156 +8684,165 @@ var $elm$html$Html$Attributes$href = function (url) {
 		'href',
 		_VirtualDom_noJavaScriptUri(url));
 };
-var $author$project$Controls$renderModal = function (appData) {
-	var _v0 = appData.modal;
-	if (_v0.$ === 'Info') {
-		return A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('cluegrid-modal-background'),
-					$elm$html$Html$Events$onClick($author$project$Datatypes$CloseModal)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('cluegrid-modal-container')
-						]),
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-header')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('cluegrid')
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
-								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
-								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info-title')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text(appData.cluegridInfo.title)
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info cluegrid-modal-bold')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Author: ' + appData.cluegridInfo.author)
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info cluegrid-modal-bold')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Editor: ' + appData.cluegridInfo.editor)
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text(appData.cluegridInfo.copyright)
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
-								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
-								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
-								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('data from '),
-									A2(
-									$elm$html$Html$a,
-									_List_fromArray(
-										[
-											$elm$html$Html$Attributes$href('https://www.xwordinfo.com/')
-										]),
-									_List_fromArray(
-										[
-											$elm$html$Html$text('xwordinfo')
-										]))
-								])),
-							A2(
-							$elm$html$Html$div,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('cluegrid-modal-info')
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('created with ❤️ by '),
-									A2(
-									$elm$html$Html$a,
-									_List_fromArray(
-										[
-											$elm$html$Html$Attributes$href('https://samhattangady.com')
-										]),
-									_List_fromArray(
-										[
-											$elm$html$Html$text('chapliboy')
-										]))
-								]))
-						]))
-				]));
+var $author$project$Controls$showModal = function (modal) {
+	if (modal.$ === 'Info') {
+		return true;
 	} else {
-		return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+		return false;
 	}
+};
+var $author$project$Controls$renderModal = function (appData) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('cluegrid-modal'),
+				$elm$html$Html$Attributes$classList(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'cluegrid-modal-background',
+						$author$project$Controls$showModal(appData.modal))
+					])),
+				$elm$html$Html$Events$onClick($author$project$Datatypes$CloseModal)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('cluegrid-modal-container')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-header')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('cluegrid')
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info-title')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(appData.cluegridInfo.title)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info cluegrid-modal-bold')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Author: ' + appData.cluegridInfo.author)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info cluegrid-modal-bold')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Editor: ' + appData.cluegridInfo.editor)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(appData.cluegridInfo.copyright)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-vert-spacer')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('data from '),
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$href('https://www.xwordinfo.com/')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('xwordinfo')
+									]))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('created with ❤️ by '),
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$href('https://samhattangady.com')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('chapliboy')
+									]))
+							]))
+					]))
+			]));
 };
 var $author$project$Controls$renderAppData = function (appData) {
 	return A2(
