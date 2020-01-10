@@ -60,7 +60,7 @@ init flags url key =
     ( Loading
     , Cmd.batch
         [ Http.get
-            { url = "/Oct01-2019.json"
+            { url = "data/Oct07-2019.json"
             , expect = Http.expectJson FetchedData decodeAppData
             }
         , sendRequestAllCells ""

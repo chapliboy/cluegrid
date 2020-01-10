@@ -105,6 +105,7 @@ type alias Cell =
     , acrossClueIndex : Maybe Int
     , downClueIndex : Maybe Int
     , entry : Maybe String
+    , oldEntry : Maybe String
     }
 
 

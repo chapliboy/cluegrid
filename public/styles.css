@@ -172,6 +172,7 @@ body {
   color: #555;
   display: flex;
   justify-content: flex-start;
+  transition: background-color .2s linear;
 }
 
 .cluegrid-clue-is-active {
@@ -212,7 +213,7 @@ body {
   height: var(--cell-size);
   width: var(--cell-size);
   text-align: center;
-  color: #555;
+  transition: background-color .2s linear;
 }
 
 .cluegrid-crossword-cell-grid-number {
@@ -230,6 +231,11 @@ body {
   padding-top: calc(var(--rem-size) * 0.35);
   font-size: calc(var(--rem-size) * 1.6);
   font-weight: 900;
+  color: #00000000;
+  transition: color .2s linear;
+}
+
+.cluegrid-crossword-cell-solution-is-filled {
   color: #33333388;
 }
 

@@ -5367,11 +5367,11 @@ var $author$project$Clue$decodeClue = A7(
 	A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Clue$decodeClues = $elm$json$Json$Decode$list($author$project$Clue$decodeClue);
-var $author$project$Datatypes$Cell = F7(
-	function (solution, row, col, gridNumber, acrossClueIndex, downClueIndex, entry) {
-		return {acrossClueIndex: acrossClueIndex, col: col, downClueIndex: downClueIndex, entry: entry, gridNumber: gridNumber, row: row, solution: solution};
+var $author$project$Datatypes$Cell = F8(
+	function (solution, row, col, gridNumber, acrossClueIndex, downClueIndex, entry, oldEntry) {
+		return {acrossClueIndex: acrossClueIndex, col: col, downClueIndex: downClueIndex, entry: entry, gridNumber: gridNumber, oldEntry: oldEntry, row: row, solution: solution};
 	});
-var $elm$json$Json$Decode$map7 = _Json_map7;
+var $elm$json$Json$Decode$map8 = _Json_map8;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $elm$json$Json$Decode$nullable = function (decoder) {
@@ -5382,8 +5382,8 @@ var $elm$json$Json$Decode$nullable = function (decoder) {
 				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
 			]));
 };
-var $author$project$Cell$decodeCell = A8(
-	$elm$json$Json$Decode$map7,
+var $author$project$Cell$decodeCell = A9(
+	$elm$json$Json$Decode$map8,
 	$author$project$Datatypes$Cell,
 	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int),
@@ -5400,6 +5400,7 @@ var $author$project$Cell$decodeCell = A8(
 		$elm$json$Json$Decode$field,
 		'down_clue_index',
 		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
+	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing),
 	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing));
 var $elm$core$Array$fromListHelp = F3(
 	function (list, nodeList, nodeListSize) {
@@ -5452,7 +5453,6 @@ var $author$project$Cell$decodeGrid = A2(
 	$elm$json$Json$Decode$list(
 		$elm$json$Json$Decode$list($author$project$Cell$decodeCell)));
 var $elm$json$Json$Decode$map5 = _Json_map5;
-var $elm$json$Json$Decode$map8 = _Json_map8;
 var $author$project$Data$decodeAppData = A9(
 	$elm$json$Json$Decode$map8,
 	$author$project$Datatypes$AppData,
@@ -6295,7 +6295,7 @@ var $author$project$Main$init = F3(
 						$elm$http$Http$get(
 						{
 							expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeAppData),
-							url: '/Oct01-2019.json'
+							url: 'data/Oct07-2019.json'
 						}),
 						$author$project$Main$sendRequestAllCells('')
 					])));
@@ -6780,9 +6780,23 @@ var $author$project$Cell$updateCellInRow = F3(
 		return A2(
 			$elm$core$Array$map,
 			function (cell) {
-				return A2($author$project$Cell$isCellEqual, cell, cellToUpdate) ? _Utils_update(
-					cell,
-					{entry: letter}) : cell;
+				if (A2($author$project$Cell$isCellEqual, cell, cellToUpdate)) {
+					if (letter.$ === 'Nothing') {
+						return _Utils_update(
+							cell,
+							{entry: $elm$core$Maybe$Nothing});
+					} else {
+						var l = letter.a;
+						return _Utils_update(
+							cell,
+							{
+								entry: $elm$core$Maybe$Just(l),
+								oldEntry: $elm$core$Maybe$Just(l)
+							});
+					}
+				} else {
+					return cell;
+				}
 			},
 			row);
 	});
@@ -6929,53 +6943,27 @@ var $author$project$Controls$selectCell = F3(
 			return appData;
 		}
 	});
-var $author$project$Controls$moveCell = F4(
-	function (originalAppData, appData, rowChange, colChange) {
-		moveCell:
-		while (true) {
-			var _v0 = appData.activeCell;
-			if (_v0.$ === 'Nothing') {
-				return A3($author$project$Controls$selectCell, appData, 0, 0);
+var $author$project$Controls$moveCellWithoutJump = F3(
+	function (appData, rowChange, colChange) {
+		var _v0 = appData.activeCell;
+		if (_v0.$ === 'Nothing') {
+			return appData;
+		} else {
+			var _v1 = _v0.a;
+			var row = _v1.a;
+			var col = _v1.b;
+			var _v2 = A2(
+				$author$project$Cell$getCellFromRowCol,
+				appData.grid,
+				_Utils_Tuple2(row + rowChange, col + colChange));
+			if (_v2.$ === 'Nothing') {
+				return appData;
 			} else {
-				var _v1 = _v0.a;
-				var row = _v1.a;
-				var col = _v1.b;
-				var _v2 = A2(
-					$author$project$Cell$getCellFromRowCol,
-					appData.grid,
-					_Utils_Tuple2(row + rowChange, col + colChange));
-				if (_v2.$ === 'Just') {
-					var cellAtRowCol = _v2.a;
-					if ($author$project$Cell$crosswordCellisBlank(cellAtRowCol)) {
-						var $temp$originalAppData = originalAppData,
-							$temp$appData = _Utils_update(
-							appData,
-							{
-								activeCell: $elm$core$Maybe$Just(
-									_Utils_Tuple2(row + rowChange, col + colChange))
-							}),
-							$temp$rowChange = rowChange,
-							$temp$colChange = colChange;
-						originalAppData = $temp$originalAppData;
-						appData = $temp$appData;
-						rowChange = $temp$rowChange;
-						colChange = $temp$colChange;
-						continue moveCell;
-					} else {
-						return A3($author$project$Controls$selectCell, appData, row + rowChange, col + colChange);
-					}
-				} else {
-					return originalAppData;
-				}
+				var cell = _v2.a;
+				return $author$project$Cell$crosswordCellisBlank(cell) ? appData : A3($author$project$Controls$selectCell, appData, row + rowChange, col + colChange);
 			}
 		}
 	});
-var $author$project$Controls$moveDown = function (appData) {
-	return A4($author$project$Controls$moveCell, appData, appData, 1, 0);
-};
-var $author$project$Controls$moveRight = function (appData) {
-	return A4($author$project$Controls$moveCell, appData, appData, 0, 1);
-};
 var $author$project$Controls$moveNext = function (appData) {
 	var _v0 = appData.activeClueIndex;
 	if (_v0.$ === 'Just') {
@@ -6988,9 +6976,9 @@ var $author$project$Controls$moveNext = function (appData) {
 			var clue = _v1.a;
 			var _v2 = clue.direction;
 			if (_v2.$ === 'Across') {
-				return $author$project$Controls$moveRight(appData);
+				return A3($author$project$Controls$moveCellWithoutJump, appData, 0, 1);
 			} else {
-				return $author$project$Controls$moveDown(appData);
+				return A3($author$project$Controls$moveCellWithoutJump, appData, 1, 0);
 			}
 		} else {
 			return appData;
@@ -7001,12 +6989,6 @@ var $author$project$Controls$moveNext = function (appData) {
 };
 var $elm$core$Basics$negate = function (n) {
 	return -n;
-};
-var $author$project$Controls$moveLeft = function (appData) {
-	return A4($author$project$Controls$moveCell, appData, appData, 0, -1);
-};
-var $author$project$Controls$moveUp = function (appData) {
-	return A4($author$project$Controls$moveCell, appData, appData, -1, 0);
 };
 var $author$project$Controls$movePrevious = function (appData) {
 	var _v0 = appData.activeClueIndex;
@@ -7020,9 +7002,9 @@ var $author$project$Controls$movePrevious = function (appData) {
 			var clue = _v1.a;
 			var _v2 = clue.direction;
 			if (_v2.$ === 'Across') {
-				return $author$project$Controls$moveLeft(appData);
+				return A3($author$project$Controls$moveCellWithoutJump, appData, 0, -1);
 			} else {
-				return $author$project$Controls$moveUp(appData);
+				return A3($author$project$Controls$moveCellWithoutJump, appData, -1, 0);
 			}
 		} else {
 			return appData;
@@ -7121,6 +7103,59 @@ var $author$project$Controls$keyToKeyboardInput = function (code) {
 			}
 		}
 	}
+};
+var $author$project$Controls$moveCell = F4(
+	function (originalAppData, appData, rowChange, colChange) {
+		moveCell:
+		while (true) {
+			var _v0 = appData.activeCell;
+			if (_v0.$ === 'Nothing') {
+				return A3($author$project$Controls$selectCell, appData, 0, 0);
+			} else {
+				var _v1 = _v0.a;
+				var row = _v1.a;
+				var col = _v1.b;
+				var _v2 = A2(
+					$author$project$Cell$getCellFromRowCol,
+					appData.grid,
+					_Utils_Tuple2(row + rowChange, col + colChange));
+				if (_v2.$ === 'Just') {
+					var cellAtRowCol = _v2.a;
+					if ($author$project$Cell$crosswordCellisBlank(cellAtRowCol)) {
+						var $temp$originalAppData = originalAppData,
+							$temp$appData = _Utils_update(
+							appData,
+							{
+								activeCell: $elm$core$Maybe$Just(
+									_Utils_Tuple2(row + rowChange, col + colChange))
+							}),
+							$temp$rowChange = rowChange,
+							$temp$colChange = colChange;
+						originalAppData = $temp$originalAppData;
+						appData = $temp$appData;
+						rowChange = $temp$rowChange;
+						colChange = $temp$colChange;
+						continue moveCell;
+					} else {
+						return A3($author$project$Controls$selectCell, appData, row + rowChange, col + colChange);
+					}
+				} else {
+					return originalAppData;
+				}
+			}
+		}
+	});
+var $author$project$Controls$moveDown = function (appData) {
+	return A4($author$project$Controls$moveCell, appData, appData, 1, 0);
+};
+var $author$project$Controls$moveLeft = function (appData) {
+	return A4($author$project$Controls$moveCell, appData, appData, 0, -1);
+};
+var $author$project$Controls$moveRight = function (appData) {
+	return A4($author$project$Controls$moveCell, appData, appData, 0, 1);
+};
+var $author$project$Controls$moveUp = function (appData) {
+	return A4($author$project$Controls$moveCell, appData, appData, -1, 0);
 };
 var $elm$core$Basics$modBy = _Basics_modBy;
 var $author$project$Controls$setActiveClue = F2(
@@ -8480,6 +8515,14 @@ var $author$project$Datatypes$CellClicked = F2(
 	function (a, b) {
 		return {$: 'CellClicked', a: a, b: b};
 	});
+var $author$project$Cell$crosswordCellisFilled = function (cell) {
+	var _v0 = cell.entry;
+	if (_v0.$ === 'Nothing') {
+		return false;
+	} else {
+		return true;
+	}
+};
 var $author$project$Cell$isActiveCell = F2(
 	function (cell, activeCell) {
 		if (activeCell.$ === 'Just') {
@@ -8571,7 +8614,14 @@ var $author$project$Cell$renderCell = F4(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('cluegrid-crossword-cell-solution')
+							$elm$html$Html$Attributes$class('cluegrid-crossword-cell-solution'),
+							$elm$html$Html$Attributes$classList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									'cluegrid-crossword-cell-solution-is-filled',
+									$author$project$Cell$crosswordCellisFilled(cell))
+								]))
 						]),
 					_List_fromArray(
 						[
@@ -8582,7 +8632,13 @@ var $author$project$Cell$renderCell = F4(
 									var entry = _v1.a;
 									return entry;
 								} else {
-									return '';
+									var _v2 = cell.oldEntry;
+									if (_v2.$ === 'Just') {
+										var entry = _v2.a;
+										return entry;
+									} else {
+										return '';
+									}
 								}
 							}())
 						]))
@@ -8808,7 +8864,7 @@ var $author$project$Controls$renderHeaderCell = function (_v0) {
 	}();
 	return A4(
 		$author$project$Cell$renderCell,
-		A7(
+		A8(
 			$author$project$Datatypes$Cell,
 			solution,
 			-1,
@@ -8816,7 +8872,8 @@ var $author$project$Controls$renderHeaderCell = function (_v0) {
 			num,
 			$elm$core$Maybe$Nothing,
 			$elm$core$Maybe$Nothing,
-			$elm$core$Maybe$Just(letter)),
+			$elm$core$Maybe$Just(letter),
+			$elm$core$Maybe$Nothing),
 		$elm$core$Maybe$Nothing,
 		$elm$core$Maybe$Nothing,
 		$elm$core$Maybe$Nothing);

@@ -32,10 +32,10 @@
     })
 
     function setup_websocket() {
-      // let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
-      let SOCKET_LINK = 'ws://127.0.0.1:8080/?name=Medwig'
+      let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
+      // let SOCKET_LINK = 'ws://127.0.0.1:8080/?name=Medwig'
       var ws = new WebSocket(SOCKET_LINK);
-    
+
       ws.onopen = function () {
         while (msgs.length > 0) {
           qMsg = msgs.pop();
@@ -48,12 +48,10 @@
           app.ports.recieveCellUpdate.send(message.data);
         }
         else if (message.message == 'update_other_clue') {
-          console.log('updating other clue', message.data)
-          app.ports.recieveOtherClueUpdate.send(message.data); 
+          app.ports.recieveOtherClueUpdate.send(message.data);
         }
       }
       ws.onclose = function(message) {
-        console.log('socket closed', message);
         // restart websocket if it closes, and rerequest cells if we missed anything
         setup_websocket()
         ws_send('request_all_cells', '');
@@ -76,12 +74,10 @@
       })
 
       app.ports.sendRequestAllCells.subscribe(function(data) {
-        console.log('requesting all cells')
         ws_send('request_all_cells', data);
       })
 
       app.ports.sendClueIndexUpdate.subscribe(function(data) {
-        console.log('updating active clue', data)
         ws_send('update_active_clue', data)
       })
     }

@@ -296,6 +296,25 @@ changeActiveEntry appData letter =
             appData
 
 
+moveCellWithoutJump : AppData -> Int -> Int -> AppData
+moveCellWithoutJump appData rowChange colChange =
+    case appData.activeCell of
+        Nothing ->
+            appData
+
+        Just ( row, col ) ->
+            case getCellFromRowCol appData.grid ( row + rowChange, col + colChange ) of
+                Nothing ->
+                    appData
+
+                Just cell ->
+                    if crosswordCellisBlank cell then
+                        appData
+
+                    else
+                        selectCell appData (row + rowChange) (col + colChange)
+
+
 moveCell : AppData -> AppData -> Int -> Int -> AppData
 moveCell originalAppData appData rowChange colChange =
     case appData.activeCell of
@@ -350,10 +369,10 @@ moveNext appData =
                 Just clue ->
                     case clue.direction of
                         Across ->
-                            moveRight appData
+                            moveCellWithoutJump appData 0 1
 
                         Down ->
-                            moveDown appData
+                            moveCellWithoutJump appData 1 0
 
                 Nothing ->
                     appData
@@ -370,10 +389,10 @@ movePrevious appData =
                 Just clue ->
                     case clue.direction of
                         Across ->
-                            moveLeft appData
+                            moveCellWithoutJump appData 0 -1
 
                         Down ->
-                            moveUp appData
+                            moveCellWithoutJump appData -1 0
 
                 Nothing ->
                     appData
@@ -667,6 +686,7 @@ renderHeaderCell ( letter, num ) =
             Nothing
             Nothing
             (Just letter)
+            Nothing
         )
         Nothing
         Nothing

@@ -5,7 +5,7 @@ import Datatypes exposing (ActiveCell, ActiveClueIndex, Cell, Grid, Msg(..))
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, classList)
 import Html.Events exposing (onClick)
-import Json.Decode exposing (Decoder, andThen, field, int, list, map7, nullable, string, succeed)
+import Json.Decode exposing (Decoder, andThen, field, int, list, map8, nullable, string, succeed)
 
 
 invalidCell =
@@ -14,13 +14,14 @@ invalidCell =
 
 decodeCell : Decoder Cell
 decodeCell =
-    map7 Cell
+    map8 Cell
         (field "solution" string)
         (field "row" int)
         (field "col" int)
         (field "grid_number" (nullable int))
         (field "across_clue_index" (nullable int))
         (field "down_clue_index" (nullable int))
+        (succeed Nothing)
         (succeed Nothing)
 
 
@@ -97,6 +98,16 @@ crosswordCellisBlank cell =
     cell.solution == "."
 
 
+crosswordCellisFilled : Cell -> Bool
+crosswordCellisFilled cell =
+    case cell.entry of
+        Nothing ->
+            False
+
+        Just _ ->
+            True
+
+
 crosswordCellSolution : String -> String
 crosswordCellSolution solution =
     if solution == "." then
@@ -165,14 +176,24 @@ renderCell cell activeClueIndex otherActiveClueIndex activeCell =
                         ""
                 )
             ]
-        , div [ class "cluegrid-crossword-cell-solution" ]
+        , div
+            [ class "cluegrid-crossword-cell-solution"
+            , classList
+                [ ( "cluegrid-crossword-cell-solution-is-filled", crosswordCellisFilled cell )
+                ]
+            ]
             [ text
                 (case cell.entry of
                     Just entry ->
                         entry
 
                     Nothing ->
-                        ""
+                        case cell.oldEntry of
+                            Just entry ->
+                                entry
+
+                            Nothing ->
+                                ""
                 )
             ]
         ]
@@ -188,7 +209,12 @@ updateCellInRow cellToUpdate row letter =
     Array.map
         (\cell ->
             if isCellEqual cell cellToUpdate then
-                { cell | entry = letter }
+                case letter of
+                    Nothing ->
+                        { cell | entry = Nothing }
+
+                    Just l ->
+                        { cell | entry = Just l, oldEntry = Just l }
 
             else
                 cell
