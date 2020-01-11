@@ -5,3 +5,15 @@
 # elm-stuff
 # TODO (07 Dec 2019 sam): See if this should be here? I believe it is like node_modules
 elm-stuff
+
+# firebase things. Not yet sure if I want to use them for hosting
+.firebase*
+firebase.json
+
+# dist things
+dist
+dist.zip
+
+# data and logs
+public/data
+build_logs.log
