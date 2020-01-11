@@ -32,6 +32,7 @@ module Datatypes exposing
     , ModalContents(..)
     , Model(..)
     , Msg(..)
+    , PuzzleData(..)
     , RowCol
     , SocketMessage
     )
@@ -43,6 +44,11 @@ import Json.Encode as E
 
 
 type Model
+    = LandingPage
+    | PuzzlePage PuzzleData
+
+
+type PuzzleData
     = Loading
     | Failure
     | Loaded AppData
@@ -61,6 +67,7 @@ type Msg
     | SolveActiveClue
     | CheckActiveClue
     | SetModalInfo
+    | GoToPuzzle
     | NoOp
 
 

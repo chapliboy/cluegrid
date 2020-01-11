@@ -4,9 +4,9 @@ import Array
 import Browser.Dom as Dom
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry)
 import Clue exposing (getClueId, renderCluesData)
-import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), Clues, ControlKey(..), KeyboardInput(..), ModalContents(..), Model(..), Msg(..), RowCol, SocketMessage)
-import Html exposing (Html, a, div, i, text)
-import Html.Attributes exposing (class, classList, href)
+import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), Clues, ControlKey(..), KeyboardInput(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RowCol, SocketMessage)
+import Html exposing (Html, a, div, i, img, text)
+import Html.Attributes exposing (class, classList, href, src)
 import Html.Events exposing (onClick)
 import Task
 
@@ -141,7 +141,7 @@ getScrollPortHeight viewport clue scrollArea =
 
 sendScrollToClue : AppData -> ( Model, Cmd Msg )
 sendScrollToClue appData =
-    ( Loaded appData, scrollToClue appData )
+    ( PuzzlePage (Loaded appData), scrollToClue appData )
 
 
 sendUpdateData : Maybe String -> Int -> Int -> AppData -> ( Model, Cmd Msg )
@@ -150,7 +150,7 @@ sendUpdateData letter row col appData =
         cellUpdateData =
             CellUpdateData (RowCol row col) letter
     in
-    ( Loaded appData
+    ( PuzzlePage (Loaded appData)
     , Cmd.batch
         [ sendCellUpdate cellUpdateData
         , scrollToClue appData
@@ -217,7 +217,7 @@ handleKeyInput key appData =
                         |> sendScrollToClue
 
                 EscapeKey ->
-                    ( Loaded { appData | modal = Empty }, Cmd.none )
+                    ( PuzzlePage (Loaded { appData | modal = Empty }), Cmd.none )
 
                 _ ->
                     appData
@@ -613,7 +613,7 @@ solveActiveClue appData =
     -- and that feels too clunky. And the grid looping is all nested and ugly
     case appData.activeClueIndex of
         Nothing ->
-            ( Loaded appData, Cmd.none )
+            ( PuzzlePage (Loaded appData), Cmd.none )
 
         Just index ->
             let
@@ -630,7 +630,7 @@ solveActiveClue appData =
                     updateData
                         |> Array.foldl updateCellData appData
             in
-            ( Loaded newData
+            ( PuzzlePage (Loaded newData)
             , Cmd.batch
                 (updateData
                     |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
@@ -643,7 +643,7 @@ checkActiveClue : AppData -> ( Model, Cmd Msg )
 checkActiveClue appData =
     case appData.activeClueIndex of
         Nothing ->
-            ( Loaded appData, Cmd.none )
+            ( PuzzlePage (Loaded appData), Cmd.none )
 
         Just index ->
             let
@@ -657,7 +657,7 @@ checkActiveClue appData =
                     updateData
                         |> Array.foldl updateCellData appData
             in
-            ( Loaded newData
+            ( PuzzlePage (Loaded newData)
             , Cmd.batch
                 (updateData
                     |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
@@ -699,18 +699,10 @@ renderHeaderRow =
         [ class "cluegrid-header-container" ]
         [ div
             [ class "cluegrid-header-row" ]
-            ([ ( "C", Just 3 )
-             , ( "L", Nothing )
-             , ( "U", Nothing )
-             , ( "E", Nothing )
-             , ( "", Nothing )
-             , ( "G", Just 7 )
-             , ( "R", Nothing )
-             , ( "I", Nothing )
-             , ( "D", Nothing )
-             ]
-                |> List.map (\letter -> renderHeaderCell letter)
-            )
+            [ div [ class "cluegrid-header-logo-container" ]
+                [ img [ class "cluegrid-header-logo", src "cluegrid_logo.png" ] []
+                ]
+            ]
         , div
             [ class "cluegrid-header-buttons" ]
             [ div [ class "cluegrid-header-button", onClick SolveActiveClue ]
@@ -723,14 +715,14 @@ renderHeaderRow =
         ]
 
 
-showModal : ModalContents -> Bool
-showModal modal =
+hideModal : ModalContents -> Bool
+hideModal modal =
     case modal of
         Info ->
-            True
+            False
 
         Empty ->
-            False
+            True
 
 
 renderModal : AppData -> Html Msg
@@ -739,8 +731,8 @@ renderModal appData =
     -- closing. Would have to change it to some other way if we want to support
     -- multiple different modals
     div
-        [ class "cluegrid-modal"
-        , classList [ ( "cluegrid-modal-background", showModal appData.modal ) ]
+        [ class "cluegrid-modal-background"
+        , classList [ ( "cluegrid-modal-hidden", hideModal appData.modal ) ]
         , onClick CloseModal
         ]
         [ div [ class "cluegrid-modal-container" ]
@@ -759,7 +751,12 @@ renderModal appData =
                 , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
                 ]
             , div [ class "cluegrid-modal-info" ]
-                [ text "created with ❤️ by "
+                [ a [ href "https://github.com/samhattangady/cluegrid/" ] [ text "built" ]
+                , text " with "
+                , a [ href "https://elm-lang.org" ] [ text "elm" ]
+                ]
+            , div [ class "cluegrid-modal-info" ]
+                [ text "created with ♥ by "
                 , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
                 ]
             ]

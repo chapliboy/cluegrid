@@ -5,12 +5,13 @@ import Browser.Events
 import Browser.Navigation exposing (Key)
 import Controls exposing (checkActiveClue, handleKeyInput, renderAppData, renderHeaderRow, selectCellAndScroll, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 import Data exposing (decodeAppData)
-import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelName, Clues, ModalContents(..), Model(..), Msg(..), SocketMessage)
+import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelName, Clues, ModalContents(..), Model(..), Msg(..), PuzzleData(..), SocketMessage)
 import Html exposing (div, text)
 import Html.Attributes exposing (class)
 import Http
 import Json.Decode exposing (field, map, string)
 import Json.Encode as E
+import Landing exposing (renderLandingPage)
 import Url exposing (Url)
 
 
@@ -57,77 +58,96 @@ onUrlRequest urlRequest =
 
 init : () -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Loading
-    , Cmd.batch
-        [ Http.get
-            { url = "data/Oct07-2019.json"
-            , expect = Http.expectJson FetchedData decodeAppData
-            }
-        , sendRequestAllCells ""
-        ]
-    )
+    --     ( Loading
+    --     , Cmd.batch
+    --         [ Http.get
+    --             { url = "data/Oct07-2019.json"
+    --             , expect = Http.expectJson FetchedData decodeAppData
+    --             }
+    --         , sendRequestAllCells ""
+    --         ]
+    --     )
+    ( LandingPage, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        Loading ->
+        LandingPage ->
             case msg of
-                FetchedData data ->
-                    case data of
-                        Ok appData ->
-                            ( Loaded appData, Cmd.none )
-
-                        Err _ ->
-                            ( Failure, Cmd.none )
+                GoToPuzzle ->
+                    ( PuzzlePage Loading
+                    , Cmd.batch
+                        [ Http.get
+                            { url = "data/Oct07-2019.json"
+                            , expect = Http.expectJson FetchedData decodeAppData
+                            }
+                        , sendRequestAllCells ""
+                        ]
+                    )
 
                 _ ->
-                    ( Loading, Cmd.none )
+                    ( LandingPage, Cmd.none )
 
-        Loaded appData ->
-            case msg of
-                -- TODO (13 Dec 2019 sam): See if we should pass the clues-container
-                -- scroll here as a Cmd msg.
-                KeyPressed key ->
-                    handleKeyInput key appData
+        PuzzlePage puzzleData ->
+            case puzzleData of
+                Failure ->
+                    ( PuzzlePage Failure, Cmd.none )
 
-                CellClicked rowNum colNum ->
-                    selectCellAndScroll appData rowNum colNum
+                Loading ->
+                    case msg of
+                        FetchedData data ->
+                            case data of
+                                Ok appData ->
+                                    ( PuzzlePage (Loaded appData), Cmd.none )
 
-                -- ( Loaded (selectCell appData rowNum colNum), Cmd.none )
-                ClueClicked clueIndex ->
-                    ( Loaded (setActiveClue appData clueIndex), Cmd.none )
+                                Err _ ->
+                                    ( PuzzlePage Failure, Cmd.none )
 
-                -- TODO (13 Dec 2019 sam): This means that the crossword data can
-                -- only be fetched once. Will have to change this if we decide that
-                -- we want to change the data.
-                CellUpdate cellUpdateData ->
-                    ( Loaded (updateCellData cellUpdateData appData), Cmd.none )
+                        _ ->
+                            ( PuzzlePage Loading, Cmd.none )
 
-                CloseModal ->
-                    ( Loaded { appData | modal = Empty }, Cmd.none )
+                Loaded appData ->
+                    case msg of
+                        -- TODO (13 Dec 2019 sam): See if we should pass the clues-container
+                        -- scroll here as a Cmd msg.
+                        KeyPressed key ->
+                            handleKeyInput key appData
 
-                SetModalInfo ->
-                    ( Loaded { appData | modal = Info }, Cmd.none )
+                        CellClicked rowNum colNum ->
+                            selectCellAndScroll appData rowNum colNum
 
-                SolveActiveClue ->
-                    solveActiveClue appData
+                        -- ( Loaded (selectCell appData rowNum colNum), Cmd.none )
+                        ClueClicked clueIndex ->
+                            ( PuzzlePage (Loaded (setActiveClue appData clueIndex)), Cmd.none )
 
-                CheckActiveClue ->
-                    checkActiveClue appData
+                        -- TODO (13 Dec 2019 sam): This means that the crossword data can
+                        -- only be fetched once. Will have to change this if we decide that
+                        -- we want to change the data.
+                        CellUpdate cellUpdateData ->
+                            ( PuzzlePage (Loaded (updateCellData cellUpdateData appData)), Cmd.none )
 
-                HandleSocketMessage message ->
-                    -- TODO (09 Jan 2020 sam): Learn how to decode this message here
-                    ( Loaded appData, Cmd.none )
+                        CloseModal ->
+                            ( PuzzlePage (Loaded { appData | modal = Empty }), Cmd.none )
 
-                OtherClueUpdated otherClueIndex ->
-                    ( Loaded (updateOtherClue otherClueIndex appData), Cmd.none )
+                        SetModalInfo ->
+                            ( PuzzlePage (Loaded { appData | modal = Info }), Cmd.none )
 
-                _ ->
-                    ( Loaded appData, Cmd.none )
+                        SolveActiveClue ->
+                            solveActiveClue appData
 
-        Failure ->
-            ( Failure, Cmd.none )
+                        CheckActiveClue ->
+                            checkActiveClue appData
+
+                        HandleSocketMessage message ->
+                            -- TODO (09 Jan 2020 sam): Learn how to decode this message here
+                            ( PuzzlePage (Loaded appData), Cmd.none )
+
+                        OtherClueUpdated otherClueIndex ->
+                            ( PuzzlePage (Loaded (updateOtherClue otherClueIndex appData)), Cmd.none )
+
+                        _ ->
+                            ( PuzzlePage (Loaded appData), Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -142,26 +162,31 @@ subscriptions model =
 
 view : Model -> Browser.Document Msg
 view model =
-    let
-        body =
-            case model of
-                Loaded appData ->
-                    renderAppData appData
+    case model of
+        LandingPage ->
+            renderLandingPage
 
-                Failure ->
-                    div
-                        [ class "cluegrid-data-not-loaded" ]
-                        [ text "Could not fetch data ‾\\_(ツ)_/‾" ]
+        PuzzlePage puzzleData ->
+            let
+                body =
+                    case puzzleData of
+                        Loaded appData ->
+                            renderAppData appData
 
-                Loading ->
-                    div
-                        [ class "cluegrid-data-not-loaded" ]
-                        [ text "loading data..." ]
-    in
-    Browser.Document "Cluegrid"
-        [ div
-            [ class "cluegrid-fullscreen-container" ]
-            [ renderHeaderRow
-            , div [ class "cluegrid-application-container" ] [ body ]
-            ]
-        ]
+                        Failure ->
+                            div
+                                [ class "cluegrid-data-not-loaded" ]
+                                [ text "Could not fetch data ‾\\_(ツ)_/‾" ]
+
+                        Loading ->
+                            div
+                                [ class "cluegrid-data-not-loaded" ]
+                                [ text "loading data..." ]
+            in
+            Browser.Document "Cluegrid"
+                [ div
+                    [ class "cluegrid-fullscreen-container" ]
+                    [ renderHeaderRow
+                    , div [ class "cluegrid-application-container" ] [ body ]
+                    ]
+                ]

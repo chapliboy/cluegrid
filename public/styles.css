@@ -16,10 +16,30 @@ body {
   --rem-size: calc(var(--cell-size)/3);
 }
 
+.landing-page-logo {
+  opacity: 0.8;
+}
+
+.box {
+  background-color: #ffffff99;
+  width: 30vw;
+  height: 30vh;
+}
+
 .cluegrid-header-container {
   display: flex;
   width: var(--app-width);
   justify-content: space-between;
+}
+
+.cluegrid-header-logo-container {
+  height: 40px;
+}
+.cluegrid-header-logo {
+  height: 20vh;
+  overflow: show;
+  transform: translate(0%, -25%);
+  opacity: 0.6;
 }
 
 .cluegrid-header-buttons {
@@ -34,7 +54,7 @@ body {
 .cluegrid-header-button {
   height: var(--cell-size);
   margin-left: calc( 0.3 * var(--cell-size));
-  border-radius: var(--cell-size);
+  border-radius: calc(0.6 * var(--rem-size));
   border: solid 1px #ffffff99;
   text-align: center;
   padding-left: var(--rem-size);
@@ -55,11 +75,11 @@ body {
 }
 
 .cluegrid-modal {
-  opacity: 0;
-  transition: opacity .5s linear;
 }
 
 .cluegrid-modal-background {
+  opacity: 0;
+  transition: opacity .5s ease-in-out;
   opacity: 1;
   position: absolute;
   top: 0px;
@@ -69,6 +89,9 @@ body {
   background-color: #99cccccc;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+}
+.cluegrid-modal-hidden {
+  display: none;
 }
 
 .cluegrid-modal-container {
@@ -144,6 +167,7 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
+  margin-left: 20px;
 }
 
 .cluegrid-clues-header {
@@ -178,7 +202,7 @@ body {
   color: #555;
   display: flex;
   justify-content: flex-start;
-  transition: background-color .2s linear;
+  transition: background-color .2s ease-in-out;
 }
 
 .cluegrid-clue-is-active {
@@ -219,7 +243,7 @@ body {
   height: var(--cell-size);
   width: var(--cell-size);
   text-align: center;
-  transition: background-color .2s linear;
+  transition: background-color .2s ease-in-out;
 }
 
 .cluegrid-crossword-cell-grid-number {
@@ -238,7 +262,7 @@ body {
   font-size: calc(var(--rem-size) * 1.6);
   font-weight: 900;
   color: #00000000;
-  transition: color .2s linear;
+  transition: color .2s ease-in-out;
 }
 
 .cluegrid-crossword-cell-solution-is-filled {

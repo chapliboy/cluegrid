@@ -4313,6 +4313,43 @@ function _Browser_load(url)
 
 
 
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
 // SEND REQUEST
 
 var _Http_toTask = F3(function(router, toTask, request)
@@ -4485,44 +4522,7 @@ function _Http_track(router, xhr, tracker)
 			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
-}
-
-
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
-var $elm$core$Basics$EQ = {$: 'EQ'};
+}var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -5311,97 +5311,313 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$application = _Browser_application;
-var $author$project$Datatypes$FetchedData = function (a) {
-	return {$: 'FetchedData', a: a};
-};
-var $author$project$Datatypes$Loading = {$: 'Loading'};
+var $author$project$Datatypes$LandingPage = {$: 'LandingPage'};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$Datatypes$AppData = F8(
-	function (clues, grid, cluegridSize, cluegridInfo, activeClueIndex, activeCell, modal, otherClueIndex) {
-		return {activeCell: activeCell, activeClueIndex: activeClueIndex, cluegridInfo: cluegridInfo, cluegridSize: cluegridSize, clues: clues, grid: grid, modal: modal, otherClueIndex: otherClueIndex};
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$init = F3(
+	function (flags, url, key) {
+		return _Utils_Tuple2($author$project$Datatypes$LandingPage, $elm$core$Platform$Cmd$none);
 	});
-var $author$project$Datatypes$CluegridInfo = F5(
-	function (date, title, author, editor, copyright) {
-		return {author: author, copyright: copyright, date: date, editor: editor, title: title};
-	});
-var $author$project$Datatypes$CluegridSize = F2(
-	function (rows, cols) {
-		return {cols: cols, rows: rows};
-	});
-var $author$project$Datatypes$Empty = {$: 'Empty'};
-var $author$project$Datatypes$Clue = F6(
-	function (startCol, startRow, solution, direction, gridNumber, clue_text) {
-		return {clue_text: clue_text, direction: direction, gridNumber: gridNumber, solution: solution, startCol: startCol, startRow: startRow};
-	});
+var $author$project$Datatypes$NoOp = {$: 'NoOp'};
+var $author$project$Main$onUrlChange = function (url) {
+	return $author$project$Datatypes$NoOp;
+};
+var $author$project$Main$onUrlRequest = function (urlRequest) {
+	return $author$project$Datatypes$NoOp;
+};
+var $author$project$Datatypes$CellUpdate = function (a) {
+	return {$: 'CellUpdate', a: a};
+};
+var $author$project$Datatypes$HandleSocketMessage = function (a) {
+	return {$: 'HandleSocketMessage', a: a};
+};
+var $author$project$Datatypes$KeyPressed = function (a) {
+	return {$: 'KeyPressed', a: a};
+};
+var $author$project$Datatypes$OtherClueUpdated = function (a) {
+	return {$: 'OtherClueUpdated', a: a};
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $author$project$Datatypes$Across = {$: 'Across'};
-var $author$project$Datatypes$Down = {$: 'Down'};
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Clue$directionFromString = function (dir) {
-	switch (dir) {
-		case 'Across':
-			return $elm$json$Json$Decode$succeed($author$project$Datatypes$Across);
-		case 'Down':
-			return $elm$json$Json$Decode$succeed($author$project$Datatypes$Down);
-		default:
-			return $elm$json$Json$Decode$fail('Invalid direction ' + dir);
-	}
-};
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Clue$decodeDirection = A2($elm$json$Json$Decode$andThen, $author$project$Clue$directionFromString, $elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $author$project$Clue$subtract1 = function (n) {
-	return $elm$json$Json$Decode$succeed(n - 1);
-};
-var $author$project$Clue$decodeStartRowCol = A2($elm$json$Json$Decode$andThen, $author$project$Clue$subtract1, $elm$json$Json$Decode$int);
 var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$map6 = _Json_map6;
-var $author$project$Clue$decodeClue = A7(
-	$elm$json$Json$Decode$map6,
-	$author$project$Datatypes$Clue,
-	A2($elm$json$Json$Decode$field, 'start_col', $author$project$Clue$decodeStartRowCol),
-	A2($elm$json$Json$Decode$field, 'start_row', $author$project$Clue$decodeStartRowCol),
-	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'direction', $author$project$Clue$decodeDirection),
-	A2($elm$json$Json$Decode$field, 'number', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string));
-var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Clue$decodeClues = $elm$json$Json$Decode$list($author$project$Clue$decodeClue);
-var $author$project$Datatypes$Cell = F8(
-	function (solution, row, col, gridNumber, acrossClueIndex, downClueIndex, entry, oldEntry) {
-		return {acrossClueIndex: acrossClueIndex, col: col, downClueIndex: downClueIndex, entry: entry, gridNumber: gridNumber, oldEntry: oldEntry, row: row, solution: solution};
-	});
-var $elm$json$Json$Decode$map8 = _Json_map8;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$nullable = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Main$recieveCellUpdate = _Platform_incomingPort(
+	'recieveCellUpdate',
+	A2(
+		$elm$json$Json$Decode$andThen,
+		function (letter) {
+			return A2(
+				$elm$json$Json$Decode$andThen,
+				function (cell) {
+					return $elm$json$Json$Decode$succeed(
+						{cell: cell, letter: letter});
+				},
+				A2(
+					$elm$json$Json$Decode$field,
+					'cell',
+					A2(
+						$elm$json$Json$Decode$andThen,
+						function (row) {
+							return A2(
+								$elm$json$Json$Decode$andThen,
+								function (col) {
+									return $elm$json$Json$Decode$succeed(
+										{col: col, row: row});
+								},
+								A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int));
+						},
+						A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int))));
+		},
+		A2(
+			$elm$json$Json$Decode$field,
+			'letter',
+			$elm$json$Json$Decode$oneOf(
+				_List_fromArray(
+					[
+						$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+						A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
+					])))));
+var $author$project$Main$recieveKeyPress = _Platform_incomingPort('recieveKeyPress', $elm$json$Json$Decode$string);
+var $author$project$Main$recieveOtherClueUpdate = _Platform_incomingPort(
+	'recieveOtherClueUpdate',
+	$elm$json$Json$Decode$oneOf(
 		_List_fromArray(
 			[
 				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$int)
+			])));
+var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$Main$recieveSocketMessage = _Platform_incomingPort('recieveSocketMessage', $elm$json$Json$Decode$value);
+var $author$project$Main$subscriptions = function (model) {
+	return $elm$core$Platform$Sub$batch(
+		_List_fromArray(
+			[
+				$author$project$Main$recieveCellUpdate($author$project$Datatypes$CellUpdate),
+				$author$project$Main$recieveKeyPress($author$project$Datatypes$KeyPressed),
+				$author$project$Main$recieveSocketMessage($author$project$Datatypes$HandleSocketMessage),
+				$author$project$Main$recieveOtherClueUpdate($author$project$Datatypes$OtherClueUpdated)
 			]));
 };
-var $author$project$Cell$decodeCell = A9(
-	$elm$json$Json$Decode$map8,
-	$author$project$Datatypes$Cell,
-	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int),
-	A2(
-		$elm$json$Json$Decode$field,
-		'grid_number',
-		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'across_clue_index',
-		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'down_clue_index',
-		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
-	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing),
-	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing));
+var $author$project$Datatypes$Empty = {$: 'Empty'};
+var $author$project$Datatypes$Failure = {$: 'Failure'};
+var $author$project$Datatypes$FetchedData = function (a) {
+	return {$: 'FetchedData', a: a};
+};
+var $author$project$Datatypes$Info = {$: 'Info'};
+var $author$project$Datatypes$Loaded = function (a) {
+	return {$: 'Loaded', a: a};
+};
+var $author$project$Datatypes$Loading = {$: 'Loading'};
+var $author$project$Datatypes$PuzzlePage = function (a) {
+	return {$: 'PuzzlePage', a: a};
+};
+var $elm$core$Elm$JsArray$appendN = _JsArray_appendN;
+var $elm$core$Elm$JsArray$slice = _JsArray_slice;
+var $elm$core$Array$appendHelpBuilder = F2(
+	function (tail, builder) {
+		var tailLen = $elm$core$Elm$JsArray$length(tail);
+		var notAppended = ($elm$core$Array$branchFactor - $elm$core$Elm$JsArray$length(builder.tail)) - tailLen;
+		var appended = A3($elm$core$Elm$JsArray$appendN, $elm$core$Array$branchFactor, builder.tail, tail);
+		return (notAppended < 0) ? {
+			nodeList: A2(
+				$elm$core$List$cons,
+				$elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: A3($elm$core$Elm$JsArray$slice, notAppended, tailLen, tail)
+		} : ((!notAppended) ? {
+			nodeList: A2(
+				$elm$core$List$cons,
+				$elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: $elm$core$Elm$JsArray$empty
+		} : {nodeList: builder.nodeList, nodeListSize: builder.nodeListSize, tail: appended});
+	});
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$push = _JsArray_push;
+var $elm$core$Elm$JsArray$singleton = _JsArray_singleton;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
+var $elm$core$Array$insertTailInTree = F4(
+	function (shift, index, tail, tree) {
+		var pos = $elm$core$Array$bitMask & (index >>> shift);
+		if (_Utils_cmp(
+			pos,
+			$elm$core$Elm$JsArray$length(tree)) > -1) {
+			if (shift === 5) {
+				return A2(
+					$elm$core$Elm$JsArray$push,
+					$elm$core$Array$Leaf(tail),
+					tree);
+			} else {
+				var newSub = $elm$core$Array$SubTree(
+					A4($elm$core$Array$insertTailInTree, shift - $elm$core$Array$shiftStep, index, tail, $elm$core$Elm$JsArray$empty));
+				return A2($elm$core$Elm$JsArray$push, newSub, tree);
+			}
+		} else {
+			var value = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (value.$ === 'SubTree') {
+				var subTree = value.a;
+				var newSub = $elm$core$Array$SubTree(
+					A4($elm$core$Array$insertTailInTree, shift - $elm$core$Array$shiftStep, index, tail, subTree));
+				return A3($elm$core$Elm$JsArray$unsafeSet, pos, newSub, tree);
+			} else {
+				var newSub = $elm$core$Array$SubTree(
+					A4(
+						$elm$core$Array$insertTailInTree,
+						shift - $elm$core$Array$shiftStep,
+						index,
+						tail,
+						$elm$core$Elm$JsArray$singleton(value)));
+				return A3($elm$core$Elm$JsArray$unsafeSet, pos, newSub, tree);
+			}
+		}
+	});
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$unsafeReplaceTail = F2(
+	function (newTail, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var originalTailLen = $elm$core$Elm$JsArray$length(tail);
+		var newTailLen = $elm$core$Elm$JsArray$length(newTail);
+		var newArrayLen = len + (newTailLen - originalTailLen);
+		if (_Utils_eq(newTailLen, $elm$core$Array$branchFactor)) {
+			var overflow = _Utils_cmp(newArrayLen >>> $elm$core$Array$shiftStep, 1 << startShift) > 0;
+			if (overflow) {
+				var newShift = startShift + $elm$core$Array$shiftStep;
+				var newTree = A4(
+					$elm$core$Array$insertTailInTree,
+					newShift,
+					len,
+					newTail,
+					$elm$core$Elm$JsArray$singleton(
+						$elm$core$Array$SubTree(tree)));
+				return A4($elm$core$Array$Array_elm_builtin, newArrayLen, newShift, newTree, $elm$core$Elm$JsArray$empty);
+			} else {
+				return A4(
+					$elm$core$Array$Array_elm_builtin,
+					newArrayLen,
+					startShift,
+					A4($elm$core$Array$insertTailInTree, startShift, len, newTail, tree),
+					$elm$core$Elm$JsArray$empty);
+			}
+		} else {
+			return A4($elm$core$Array$Array_elm_builtin, newArrayLen, startShift, tree, newTail);
+		}
+	});
+var $elm$core$Array$appendHelpTree = F2(
+	function (toAppend, array) {
+		var len = array.a;
+		var tree = array.c;
+		var tail = array.d;
+		var itemsToAppend = $elm$core$Elm$JsArray$length(toAppend);
+		var notAppended = ($elm$core$Array$branchFactor - $elm$core$Elm$JsArray$length(tail)) - itemsToAppend;
+		var appended = A3($elm$core$Elm$JsArray$appendN, $elm$core$Array$branchFactor, tail, toAppend);
+		var newArray = A2($elm$core$Array$unsafeReplaceTail, appended, array);
+		if (notAppended < 0) {
+			var nextTail = A3($elm$core$Elm$JsArray$slice, notAppended, itemsToAppend, toAppend);
+			return A2($elm$core$Array$unsafeReplaceTail, nextTail, newArray);
+		} else {
+			return newArray;
+		}
+	});
+var $elm$core$Elm$JsArray$foldl = _JsArray_foldl;
+var $elm$core$Array$builderFromArray = function (_v0) {
+	var len = _v0.a;
+	var tree = _v0.c;
+	var tail = _v0.d;
+	var helper = F2(
+		function (node, acc) {
+			if (node.$ === 'SubTree') {
+				var subTree = node.a;
+				return A3($elm$core$Elm$JsArray$foldl, helper, acc, subTree);
+			} else {
+				return A2($elm$core$List$cons, node, acc);
+			}
+		});
+	return {
+		nodeList: A3($elm$core$Elm$JsArray$foldl, helper, _List_Nil, tree),
+		nodeListSize: (len / $elm$core$Array$branchFactor) | 0,
+		tail: tail
+	};
+};
+var $elm$core$Array$append = F2(
+	function (a, _v0) {
+		var aTail = a.d;
+		var bLen = _v0.a;
+		var bTree = _v0.c;
+		var bTail = _v0.d;
+		if (_Utils_cmp(bLen, $elm$core$Array$branchFactor * 4) < 1) {
+			var foldHelper = F2(
+				function (node, array) {
+					if (node.$ === 'SubTree') {
+						var tree = node.a;
+						return A3($elm$core$Elm$JsArray$foldl, foldHelper, array, tree);
+					} else {
+						var leaf = node.a;
+						return A2($elm$core$Array$appendHelpTree, leaf, array);
+					}
+				});
+			return A2(
+				$elm$core$Array$appendHelpTree,
+				bTail,
+				A3($elm$core$Elm$JsArray$foldl, foldHelper, a, bTree));
+		} else {
+			var foldHelper = F2(
+				function (node, builder) {
+					if (node.$ === 'SubTree') {
+						var tree = node.a;
+						return A3($elm$core$Elm$JsArray$foldl, foldHelper, builder, tree);
+					} else {
+						var leaf = node.a;
+						return A2($elm$core$Array$appendHelpBuilder, leaf, builder);
+					}
+				});
+			return A2(
+				$elm$core$Array$builderToArray,
+				true,
+				A2(
+					$elm$core$Array$appendHelpBuilder,
+					bTail,
+					A3(
+						$elm$core$Elm$JsArray$foldl,
+						foldHelper,
+						$elm$core$Array$builderFromArray(a),
+						bTree)));
+		}
+	});
+var $author$project$Datatypes$CellUpdateData = F2(
+	function (cell, letter) {
+		return {cell: cell, letter: letter};
+	});
+var $author$project$Datatypes$RowCol = F2(
+	function (row, col) {
+		return {col: col, row: row};
+	});
+var $author$project$Controls$checkCorrect = function (cell) {
+	var soln = function () {
+		var _v0 = cell.entry;
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var letter = _v0.a;
+			return _Utils_eq(letter, cell.solution) ? $elm$core$Maybe$Just(letter) : $elm$core$Maybe$Nothing;
+		}
+	}();
+	return A2(
+		$author$project$Datatypes$CellUpdateData,
+		A2($author$project$Datatypes$RowCol, cell.row, cell.col),
+		soln);
+};
 var $elm$core$Array$fromListHelp = F3(
 	function (list, nodeList, nodeListSize) {
 		fromListHelp:
@@ -5437,6 +5653,362 @@ var $elm$core$Array$fromList = function (list) {
 		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
 	}
 };
+var $elm$core$Array$filter = F2(
+	function (isGood, array) {
+		return $elm$core$Array$fromList(
+			A3(
+				$elm$core$Array$foldr,
+				F2(
+					function (x, xs) {
+						return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+					}),
+				_List_Nil,
+				array));
+	});
+var $elm$core$Array$foldl = F3(
+	function (func, baseCase, _v0) {
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3($elm$core$Elm$JsArray$foldl, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3($elm$core$Elm$JsArray$foldl, func, acc, values);
+				}
+			});
+		return A3(
+			$elm$core$Elm$JsArray$foldl,
+			func,
+			A3($elm$core$Elm$JsArray$foldl, helper, baseCase, tree),
+			tail);
+	});
+var $author$project$Controls$isPartOfClue = F2(
+	function (index, cell) {
+		var isDown = function () {
+			var _v1 = cell.downClueIndex;
+			if (_v1.$ === 'Just') {
+				var downIndex = _v1.a;
+				return _Utils_eq(downIndex, index);
+			} else {
+				return false;
+			}
+		}();
+		var isAcross = function () {
+			var _v0 = cell.acrossClueIndex;
+			if (_v0.$ === 'Just') {
+				var acrossIndex = _v0.a;
+				return _Utils_eq(acrossIndex, index);
+			} else {
+				return false;
+			}
+		}();
+		return isAcross || isDown;
+	});
+var $elm$core$Elm$JsArray$map = _JsArray_map;
+var $elm$core$Array$map = F2(
+	function (func, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = function (node) {
+			if (node.$ === 'SubTree') {
+				var subTree = node.a;
+				return $elm$core$Array$SubTree(
+					A2($elm$core$Elm$JsArray$map, helper, subTree));
+			} else {
+				var values = node.a;
+				return $elm$core$Array$Leaf(
+					A2($elm$core$Elm$JsArray$map, func, values));
+			}
+		};
+		return A4(
+			$elm$core$Array$Array_elm_builtin,
+			len,
+			startShift,
+			A2($elm$core$Elm$JsArray$map, helper, tree),
+			A2($elm$core$Elm$JsArray$map, func, tail));
+	});
+var $elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Controls$sendCellUpdate = _Platform_outgoingPort(
+	'sendCellUpdate',
+	function ($) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'cell',
+					function ($) {
+						return $elm$json$Json$Encode$object(
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									'col',
+									$elm$json$Json$Encode$int($.col)),
+									_Utils_Tuple2(
+									'row',
+									$elm$json$Json$Encode$int($.row))
+								]));
+					}($.cell)),
+					_Utils_Tuple2(
+					'letter',
+					function ($) {
+						return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$string, $);
+					}($.letter))
+				]));
+	});
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
+	});
+var $author$project$Cell$getCellFromRowCol = F2(
+	function (grid, _v0) {
+		var row = _v0.a;
+		var col = _v0.b;
+		var _v1 = A2($elm$core$Array$get, row, grid);
+		if (_v1.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var correctRow = _v1.a;
+			var _v2 = A2($elm$core$Array$get, col, correctRow);
+			if (_v2.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var cell = _v2.a;
+				return $elm$core$Maybe$Just(cell);
+			}
+		}
+	});
+var $author$project$Cell$isCellEqual = F2(
+	function (cell1, cell2) {
+		return _Utils_eq(cell1.row, cell2.row) && _Utils_eq(cell1.col, cell2.col);
+	});
+var $author$project$Cell$updateCellInRow = F3(
+	function (cellToUpdate, row, letter) {
+		return A2(
+			$elm$core$Array$map,
+			function (cell) {
+				if (A2($author$project$Cell$isCellEqual, cell, cellToUpdate)) {
+					if (letter.$ === 'Nothing') {
+						return _Utils_update(
+							cell,
+							{entry: $elm$core$Maybe$Nothing});
+					} else {
+						var l = letter.a;
+						return _Utils_update(
+							cell,
+							{
+								entry: $elm$core$Maybe$Just(l),
+								oldEntry: $elm$core$Maybe$Just(l)
+							});
+					}
+				} else {
+					return cell;
+				}
+			},
+			row);
+	});
+var $author$project$Cell$updateCellEntry = F3(
+	function (cellToUpdate, letter, grid) {
+		return A2(
+			$elm$core$Array$map,
+			function (row) {
+				return A3($author$project$Cell$updateCellInRow, cellToUpdate, row, letter);
+			},
+			grid);
+	});
+var $author$project$Controls$updateCellData = F2(
+	function (cellUpdateData, appData) {
+		var _v0 = A2(
+			$author$project$Cell$getCellFromRowCol,
+			appData.grid,
+			_Utils_Tuple2(cellUpdateData.cell.row, cellUpdateData.cell.col));
+		if (_v0.$ === 'Nothing') {
+			return appData;
+		} else {
+			var cell = _v0.a;
+			var newGrid = A3($author$project$Cell$updateCellEntry, cell, cellUpdateData.letter, appData.grid);
+			return _Utils_update(
+				appData,
+				{grid: newGrid});
+		}
+	});
+var $author$project$Controls$checkActiveClue = function (appData) {
+	var _v0 = appData.activeClueIndex;
+	if (_v0.$ === 'Nothing') {
+		return _Utils_Tuple2(
+			$author$project$Datatypes$PuzzlePage(
+				$author$project$Datatypes$Loaded(appData)),
+			$elm$core$Platform$Cmd$none);
+	} else {
+		var index = _v0.a;
+		var updateData = A2(
+			$elm$core$Array$map,
+			function (cell) {
+				return $author$project$Controls$checkCorrect(cell);
+			},
+			A2(
+				$elm$core$Array$filter,
+				function (cell) {
+					return A2($author$project$Controls$isPartOfClue, index, cell);
+				},
+				A3(
+					$elm$core$Array$foldl,
+					$elm$core$Array$append,
+					$elm$core$Array$fromList(_List_Nil),
+					appData.grid)));
+		var newData = A3($elm$core$Array$foldl, $author$project$Controls$updateCellData, appData, updateData);
+		return _Utils_Tuple2(
+			$author$project$Datatypes$PuzzlePage(
+				$author$project$Datatypes$Loaded(newData)),
+			$elm$core$Platform$Cmd$batch(
+				$elm$core$Array$toList(
+					A2(
+						$elm$core$Array$map,
+						function (cellUpdate) {
+							return $author$project$Controls$sendCellUpdate(cellUpdate);
+						},
+						updateData))));
+	}
+};
+var $author$project$Datatypes$AppData = F8(
+	function (clues, grid, cluegridSize, cluegridInfo, activeClueIndex, activeCell, modal, otherClueIndex) {
+		return {activeCell: activeCell, activeClueIndex: activeClueIndex, cluegridInfo: cluegridInfo, cluegridSize: cluegridSize, clues: clues, grid: grid, modal: modal, otherClueIndex: otherClueIndex};
+	});
+var $author$project$Datatypes$CluegridInfo = F5(
+	function (date, title, author, editor, copyright) {
+		return {author: author, copyright: copyright, date: date, editor: editor, title: title};
+	});
+var $author$project$Datatypes$CluegridSize = F2(
+	function (rows, cols) {
+		return {cols: cols, rows: rows};
+	});
+var $author$project$Datatypes$Clue = F6(
+	function (startCol, startRow, solution, direction, gridNumber, clue_text) {
+		return {clue_text: clue_text, direction: direction, gridNumber: gridNumber, solution: solution, startCol: startCol, startRow: startRow};
+	});
+var $author$project$Datatypes$Across = {$: 'Across'};
+var $author$project$Datatypes$Down = {$: 'Down'};
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $author$project$Clue$directionFromString = function (dir) {
+	switch (dir) {
+		case 'Across':
+			return $elm$json$Json$Decode$succeed($author$project$Datatypes$Across);
+		case 'Down':
+			return $elm$json$Json$Decode$succeed($author$project$Datatypes$Down);
+		default:
+			return $elm$json$Json$Decode$fail('Invalid direction ' + dir);
+	}
+};
+var $author$project$Clue$decodeDirection = A2($elm$json$Json$Decode$andThen, $author$project$Clue$directionFromString, $elm$json$Json$Decode$string);
+var $author$project$Clue$subtract1 = function (n) {
+	return $elm$json$Json$Decode$succeed(n - 1);
+};
+var $author$project$Clue$decodeStartRowCol = A2($elm$json$Json$Decode$andThen, $author$project$Clue$subtract1, $elm$json$Json$Decode$int);
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Clue$decodeClue = A7(
+	$elm$json$Json$Decode$map6,
+	$author$project$Datatypes$Clue,
+	A2($elm$json$Json$Decode$field, 'start_col', $author$project$Clue$decodeStartRowCol),
+	A2($elm$json$Json$Decode$field, 'start_row', $author$project$Clue$decodeStartRowCol),
+	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'direction', $author$project$Clue$decodeDirection),
+	A2($elm$json$Json$Decode$field, 'number', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string));
+var $elm$json$Json$Decode$list = _Json_decodeList;
+var $author$project$Clue$decodeClues = $elm$json$Json$Decode$list($author$project$Clue$decodeClue);
+var $author$project$Datatypes$Cell = F8(
+	function (solution, row, col, gridNumber, acrossClueIndex, downClueIndex, entry, oldEntry) {
+		return {acrossClueIndex: acrossClueIndex, col: col, downClueIndex: downClueIndex, entry: entry, gridNumber: gridNumber, oldEntry: oldEntry, row: row, solution: solution};
+	});
+var $elm$json$Json$Decode$map8 = _Json_map8;
+var $elm$json$Json$Decode$nullable = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
+			]));
+};
+var $author$project$Cell$decodeCell = A9(
+	$elm$json$Json$Decode$map8,
+	$author$project$Datatypes$Cell,
+	A2($elm$json$Json$Decode$field, 'solution', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int),
+	A2(
+		$elm$json$Json$Decode$field,
+		'grid_number',
+		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'across_clue_index',
+		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'down_clue_index',
+		$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)),
+	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing),
+	$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing));
 var $author$project$Cell$listListCellToGrid = function (l) {
 	return $elm$json$Json$Decode$succeed(
 		$elm$core$Array$fromList(
@@ -6283,584 +6855,6 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$sendRequestAllCells = _Platform_outgoingPort('sendRequestAllCells', $elm$json$Json$Encode$string);
-var $author$project$Main$init = F3(
-	function (flags, url, key) {
-		return _Utils_Tuple2(
-			$author$project$Datatypes$Loading,
-			$elm$core$Platform$Cmd$batch(
-				_List_fromArray(
-					[
-						$elm$http$Http$get(
-						{
-							expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeAppData),
-							url: 'data/Oct07-2019.json'
-						}),
-						$author$project$Main$sendRequestAllCells('')
-					])));
-	});
-var $author$project$Datatypes$NoOp = {$: 'NoOp'};
-var $author$project$Main$onUrlChange = function (url) {
-	return $author$project$Datatypes$NoOp;
-};
-var $author$project$Main$onUrlRequest = function (urlRequest) {
-	return $author$project$Datatypes$NoOp;
-};
-var $author$project$Datatypes$CellUpdate = function (a) {
-	return {$: 'CellUpdate', a: a};
-};
-var $author$project$Datatypes$HandleSocketMessage = function (a) {
-	return {$: 'HandleSocketMessage', a: a};
-};
-var $author$project$Datatypes$KeyPressed = function (a) {
-	return {$: 'KeyPressed', a: a};
-};
-var $author$project$Datatypes$OtherClueUpdated = function (a) {
-	return {$: 'OtherClueUpdated', a: a};
-};
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $author$project$Main$recieveCellUpdate = _Platform_incomingPort(
-	'recieveCellUpdate',
-	A2(
-		$elm$json$Json$Decode$andThen,
-		function (letter) {
-			return A2(
-				$elm$json$Json$Decode$andThen,
-				function (cell) {
-					return $elm$json$Json$Decode$succeed(
-						{cell: cell, letter: letter});
-				},
-				A2(
-					$elm$json$Json$Decode$field,
-					'cell',
-					A2(
-						$elm$json$Json$Decode$andThen,
-						function (row) {
-							return A2(
-								$elm$json$Json$Decode$andThen,
-								function (col) {
-									return $elm$json$Json$Decode$succeed(
-										{col: col, row: row});
-								},
-								A2($elm$json$Json$Decode$field, 'col', $elm$json$Json$Decode$int));
-						},
-						A2($elm$json$Json$Decode$field, 'row', $elm$json$Json$Decode$int))));
-		},
-		A2(
-			$elm$json$Json$Decode$field,
-			'letter',
-			$elm$json$Json$Decode$oneOf(
-				_List_fromArray(
-					[
-						$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-						A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
-					])))));
-var $author$project$Main$recieveKeyPress = _Platform_incomingPort('recieveKeyPress', $elm$json$Json$Decode$string);
-var $author$project$Main$recieveOtherClueUpdate = _Platform_incomingPort(
-	'recieveOtherClueUpdate',
-	$elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$int)
-			])));
-var $elm$json$Json$Decode$value = _Json_decodeValue;
-var $author$project$Main$recieveSocketMessage = _Platform_incomingPort('recieveSocketMessage', $elm$json$Json$Decode$value);
-var $author$project$Main$subscriptions = function (model) {
-	return $elm$core$Platform$Sub$batch(
-		_List_fromArray(
-			[
-				$author$project$Main$recieveCellUpdate($author$project$Datatypes$CellUpdate),
-				$author$project$Main$recieveKeyPress($author$project$Datatypes$KeyPressed),
-				$author$project$Main$recieveSocketMessage($author$project$Datatypes$HandleSocketMessage),
-				$author$project$Main$recieveOtherClueUpdate($author$project$Datatypes$OtherClueUpdated)
-			]));
-};
-var $author$project$Datatypes$Failure = {$: 'Failure'};
-var $author$project$Datatypes$Info = {$: 'Info'};
-var $author$project$Datatypes$Loaded = function (a) {
-	return {$: 'Loaded', a: a};
-};
-var $elm$core$Elm$JsArray$appendN = _JsArray_appendN;
-var $elm$core$Elm$JsArray$slice = _JsArray_slice;
-var $elm$core$Array$appendHelpBuilder = F2(
-	function (tail, builder) {
-		var tailLen = $elm$core$Elm$JsArray$length(tail);
-		var notAppended = ($elm$core$Array$branchFactor - $elm$core$Elm$JsArray$length(builder.tail)) - tailLen;
-		var appended = A3($elm$core$Elm$JsArray$appendN, $elm$core$Array$branchFactor, builder.tail, tail);
-		return (notAppended < 0) ? {
-			nodeList: A2(
-				$elm$core$List$cons,
-				$elm$core$Array$Leaf(appended),
-				builder.nodeList),
-			nodeListSize: builder.nodeListSize + 1,
-			tail: A3($elm$core$Elm$JsArray$slice, notAppended, tailLen, tail)
-		} : ((!notAppended) ? {
-			nodeList: A2(
-				$elm$core$List$cons,
-				$elm$core$Array$Leaf(appended),
-				builder.nodeList),
-			nodeListSize: builder.nodeListSize + 1,
-			tail: $elm$core$Elm$JsArray$empty
-		} : {nodeList: builder.nodeList, nodeListSize: builder.nodeListSize, tail: appended});
-	});
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Basics$ge = _Utils_ge;
-var $elm$core$Elm$JsArray$push = _JsArray_push;
-var $elm$core$Elm$JsArray$singleton = _JsArray_singleton;
-var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
-var $elm$core$Array$insertTailInTree = F4(
-	function (shift, index, tail, tree) {
-		var pos = $elm$core$Array$bitMask & (index >>> shift);
-		if (_Utils_cmp(
-			pos,
-			$elm$core$Elm$JsArray$length(tree)) > -1) {
-			if (shift === 5) {
-				return A2(
-					$elm$core$Elm$JsArray$push,
-					$elm$core$Array$Leaf(tail),
-					tree);
-			} else {
-				var newSub = $elm$core$Array$SubTree(
-					A4($elm$core$Array$insertTailInTree, shift - $elm$core$Array$shiftStep, index, tail, $elm$core$Elm$JsArray$empty));
-				return A2($elm$core$Elm$JsArray$push, newSub, tree);
-			}
-		} else {
-			var value = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (value.$ === 'SubTree') {
-				var subTree = value.a;
-				var newSub = $elm$core$Array$SubTree(
-					A4($elm$core$Array$insertTailInTree, shift - $elm$core$Array$shiftStep, index, tail, subTree));
-				return A3($elm$core$Elm$JsArray$unsafeSet, pos, newSub, tree);
-			} else {
-				var newSub = $elm$core$Array$SubTree(
-					A4(
-						$elm$core$Array$insertTailInTree,
-						shift - $elm$core$Array$shiftStep,
-						index,
-						tail,
-						$elm$core$Elm$JsArray$singleton(value)));
-				return A3($elm$core$Elm$JsArray$unsafeSet, pos, newSub, tree);
-			}
-		}
-	});
-var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var $elm$core$Array$unsafeReplaceTail = F2(
-	function (newTail, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		var originalTailLen = $elm$core$Elm$JsArray$length(tail);
-		var newTailLen = $elm$core$Elm$JsArray$length(newTail);
-		var newArrayLen = len + (newTailLen - originalTailLen);
-		if (_Utils_eq(newTailLen, $elm$core$Array$branchFactor)) {
-			var overflow = _Utils_cmp(newArrayLen >>> $elm$core$Array$shiftStep, 1 << startShift) > 0;
-			if (overflow) {
-				var newShift = startShift + $elm$core$Array$shiftStep;
-				var newTree = A4(
-					$elm$core$Array$insertTailInTree,
-					newShift,
-					len,
-					newTail,
-					$elm$core$Elm$JsArray$singleton(
-						$elm$core$Array$SubTree(tree)));
-				return A4($elm$core$Array$Array_elm_builtin, newArrayLen, newShift, newTree, $elm$core$Elm$JsArray$empty);
-			} else {
-				return A4(
-					$elm$core$Array$Array_elm_builtin,
-					newArrayLen,
-					startShift,
-					A4($elm$core$Array$insertTailInTree, startShift, len, newTail, tree),
-					$elm$core$Elm$JsArray$empty);
-			}
-		} else {
-			return A4($elm$core$Array$Array_elm_builtin, newArrayLen, startShift, tree, newTail);
-		}
-	});
-var $elm$core$Array$appendHelpTree = F2(
-	function (toAppend, array) {
-		var len = array.a;
-		var tree = array.c;
-		var tail = array.d;
-		var itemsToAppend = $elm$core$Elm$JsArray$length(toAppend);
-		var notAppended = ($elm$core$Array$branchFactor - $elm$core$Elm$JsArray$length(tail)) - itemsToAppend;
-		var appended = A3($elm$core$Elm$JsArray$appendN, $elm$core$Array$branchFactor, tail, toAppend);
-		var newArray = A2($elm$core$Array$unsafeReplaceTail, appended, array);
-		if (notAppended < 0) {
-			var nextTail = A3($elm$core$Elm$JsArray$slice, notAppended, itemsToAppend, toAppend);
-			return A2($elm$core$Array$unsafeReplaceTail, nextTail, newArray);
-		} else {
-			return newArray;
-		}
-	});
-var $elm$core$Elm$JsArray$foldl = _JsArray_foldl;
-var $elm$core$Array$builderFromArray = function (_v0) {
-	var len = _v0.a;
-	var tree = _v0.c;
-	var tail = _v0.d;
-	var helper = F2(
-		function (node, acc) {
-			if (node.$ === 'SubTree') {
-				var subTree = node.a;
-				return A3($elm$core$Elm$JsArray$foldl, helper, acc, subTree);
-			} else {
-				return A2($elm$core$List$cons, node, acc);
-			}
-		});
-	return {
-		nodeList: A3($elm$core$Elm$JsArray$foldl, helper, _List_Nil, tree),
-		nodeListSize: (len / $elm$core$Array$branchFactor) | 0,
-		tail: tail
-	};
-};
-var $elm$core$Array$append = F2(
-	function (a, _v0) {
-		var aTail = a.d;
-		var bLen = _v0.a;
-		var bTree = _v0.c;
-		var bTail = _v0.d;
-		if (_Utils_cmp(bLen, $elm$core$Array$branchFactor * 4) < 1) {
-			var foldHelper = F2(
-				function (node, array) {
-					if (node.$ === 'SubTree') {
-						var tree = node.a;
-						return A3($elm$core$Elm$JsArray$foldl, foldHelper, array, tree);
-					} else {
-						var leaf = node.a;
-						return A2($elm$core$Array$appendHelpTree, leaf, array);
-					}
-				});
-			return A2(
-				$elm$core$Array$appendHelpTree,
-				bTail,
-				A3($elm$core$Elm$JsArray$foldl, foldHelper, a, bTree));
-		} else {
-			var foldHelper = F2(
-				function (node, builder) {
-					if (node.$ === 'SubTree') {
-						var tree = node.a;
-						return A3($elm$core$Elm$JsArray$foldl, foldHelper, builder, tree);
-					} else {
-						var leaf = node.a;
-						return A2($elm$core$Array$appendHelpBuilder, leaf, builder);
-					}
-				});
-			return A2(
-				$elm$core$Array$builderToArray,
-				true,
-				A2(
-					$elm$core$Array$appendHelpBuilder,
-					bTail,
-					A3(
-						$elm$core$Elm$JsArray$foldl,
-						foldHelper,
-						$elm$core$Array$builderFromArray(a),
-						bTree)));
-		}
-	});
-var $author$project$Datatypes$CellUpdateData = F2(
-	function (cell, letter) {
-		return {cell: cell, letter: letter};
-	});
-var $author$project$Datatypes$RowCol = F2(
-	function (row, col) {
-		return {col: col, row: row};
-	});
-var $author$project$Controls$checkCorrect = function (cell) {
-	var soln = function () {
-		var _v0 = cell.entry;
-		if (_v0.$ === 'Nothing') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var letter = _v0.a;
-			return _Utils_eq(letter, cell.solution) ? $elm$core$Maybe$Just(letter) : $elm$core$Maybe$Nothing;
-		}
-	}();
-	return A2(
-		$author$project$Datatypes$CellUpdateData,
-		A2($author$project$Datatypes$RowCol, cell.row, cell.col),
-		soln);
-};
-var $elm$core$Array$filter = F2(
-	function (isGood, array) {
-		return $elm$core$Array$fromList(
-			A3(
-				$elm$core$Array$foldr,
-				F2(
-					function (x, xs) {
-						return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-					}),
-				_List_Nil,
-				array));
-	});
-var $elm$core$Array$foldl = F3(
-	function (func, baseCase, _v0) {
-		var tree = _v0.c;
-		var tail = _v0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3($elm$core$Elm$JsArray$foldl, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3($elm$core$Elm$JsArray$foldl, func, acc, values);
-				}
-			});
-		return A3(
-			$elm$core$Elm$JsArray$foldl,
-			func,
-			A3($elm$core$Elm$JsArray$foldl, helper, baseCase, tree),
-			tail);
-	});
-var $author$project$Controls$isPartOfClue = F2(
-	function (index, cell) {
-		var isDown = function () {
-			var _v1 = cell.downClueIndex;
-			if (_v1.$ === 'Just') {
-				var downIndex = _v1.a;
-				return _Utils_eq(downIndex, index);
-			} else {
-				return false;
-			}
-		}();
-		var isAcross = function () {
-			var _v0 = cell.acrossClueIndex;
-			if (_v0.$ === 'Just') {
-				var acrossIndex = _v0.a;
-				return _Utils_eq(acrossIndex, index);
-			} else {
-				return false;
-			}
-		}();
-		return isAcross || isDown;
-	});
-var $elm$core$Elm$JsArray$map = _JsArray_map;
-var $elm$core$Array$map = F2(
-	function (func, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		var helper = function (node) {
-			if (node.$ === 'SubTree') {
-				var subTree = node.a;
-				return $elm$core$Array$SubTree(
-					A2($elm$core$Elm$JsArray$map, helper, subTree));
-			} else {
-				var values = node.a;
-				return $elm$core$Array$Leaf(
-					A2($elm$core$Elm$JsArray$map, func, values));
-			}
-		};
-		return A4(
-			$elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			A2($elm$core$Elm$JsArray$map, helper, tree),
-			A2($elm$core$Elm$JsArray$map, func, tail));
-	});
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$core$Maybe$destruct = F3(
-	function (_default, func, maybe) {
-		if (maybe.$ === 'Just') {
-			var a = maybe.a;
-			return func(a);
-		} else {
-			return _default;
-		}
-	});
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$null = _Json_encodeNull;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $author$project$Controls$sendCellUpdate = _Platform_outgoingPort(
-	'sendCellUpdate',
-	function ($) {
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'cell',
-					function ($) {
-						return $elm$json$Json$Encode$object(
-							_List_fromArray(
-								[
-									_Utils_Tuple2(
-									'col',
-									$elm$json$Json$Encode$int($.col)),
-									_Utils_Tuple2(
-									'row',
-									$elm$json$Json$Encode$int($.row))
-								]));
-					}($.cell)),
-					_Utils_Tuple2(
-					'letter',
-					function ($) {
-						return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$string, $);
-					}($.letter))
-				]));
-	});
-var $elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
-		while (true) {
-			var pos = $elm$core$Array$bitMask & (index >>> shift);
-			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (_v0.$ === 'SubTree') {
-				var subTree = _v0.a;
-				var $temp$shift = shift - $elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
-			} else {
-				var values = _v0.a;
-				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
-			}
-		}
-	});
-var $elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var $elm$core$Array$get = F2(
-	function (index, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
-			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
-			A3($elm$core$Array$getHelp, startShift, index, tree)));
-	});
-var $author$project$Cell$getCellFromRowCol = F2(
-	function (grid, _v0) {
-		var row = _v0.a;
-		var col = _v0.b;
-		var _v1 = A2($elm$core$Array$get, row, grid);
-		if (_v1.$ === 'Nothing') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var correctRow = _v1.a;
-			var _v2 = A2($elm$core$Array$get, col, correctRow);
-			if (_v2.$ === 'Nothing') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var cell = _v2.a;
-				return $elm$core$Maybe$Just(cell);
-			}
-		}
-	});
-var $author$project$Cell$isCellEqual = F2(
-	function (cell1, cell2) {
-		return _Utils_eq(cell1.row, cell2.row) && _Utils_eq(cell1.col, cell2.col);
-	});
-var $author$project$Cell$updateCellInRow = F3(
-	function (cellToUpdate, row, letter) {
-		return A2(
-			$elm$core$Array$map,
-			function (cell) {
-				if (A2($author$project$Cell$isCellEqual, cell, cellToUpdate)) {
-					if (letter.$ === 'Nothing') {
-						return _Utils_update(
-							cell,
-							{entry: $elm$core$Maybe$Nothing});
-					} else {
-						var l = letter.a;
-						return _Utils_update(
-							cell,
-							{
-								entry: $elm$core$Maybe$Just(l),
-								oldEntry: $elm$core$Maybe$Just(l)
-							});
-					}
-				} else {
-					return cell;
-				}
-			},
-			row);
-	});
-var $author$project$Cell$updateCellEntry = F3(
-	function (cellToUpdate, letter, grid) {
-		return A2(
-			$elm$core$Array$map,
-			function (row) {
-				return A3($author$project$Cell$updateCellInRow, cellToUpdate, row, letter);
-			},
-			grid);
-	});
-var $author$project$Controls$updateCellData = F2(
-	function (cellUpdateData, appData) {
-		var _v0 = A2(
-			$author$project$Cell$getCellFromRowCol,
-			appData.grid,
-			_Utils_Tuple2(cellUpdateData.cell.row, cellUpdateData.cell.col));
-		if (_v0.$ === 'Nothing') {
-			return appData;
-		} else {
-			var cell = _v0.a;
-			var newGrid = A3($author$project$Cell$updateCellEntry, cell, cellUpdateData.letter, appData.grid);
-			return _Utils_update(
-				appData,
-				{grid: newGrid});
-		}
-	});
-var $author$project$Controls$checkActiveClue = function (appData) {
-	var _v0 = appData.activeClueIndex;
-	if (_v0.$ === 'Nothing') {
-		return _Utils_Tuple2(
-			$author$project$Datatypes$Loaded(appData),
-			$elm$core$Platform$Cmd$none);
-	} else {
-		var index = _v0.a;
-		var updateData = A2(
-			$elm$core$Array$map,
-			function (cell) {
-				return $author$project$Controls$checkCorrect(cell);
-			},
-			A2(
-				$elm$core$Array$filter,
-				function (cell) {
-					return A2($author$project$Controls$isPartOfClue, index, cell);
-				},
-				A3(
-					$elm$core$Array$foldl,
-					$elm$core$Array$append,
-					$elm$core$Array$fromList(_List_Nil),
-					appData.grid)));
-		var newData = A3($elm$core$Array$foldl, $author$project$Controls$updateCellData, appData, updateData);
-		return _Utils_Tuple2(
-			$author$project$Datatypes$Loaded(newData),
-			$elm$core$Platform$Cmd$batch(
-				$elm$core$Array$toList(
-					A2(
-						$elm$core$Array$map,
-						function (cellUpdate) {
-							return $author$project$Controls$sendCellUpdate(cellUpdate);
-						},
-						updateData))));
-	}
-};
 var $author$project$Cell$crosswordCellisBlank = function (cell) {
 	return cell.solution === '.';
 };
@@ -7305,7 +7299,8 @@ var $author$project$Controls$scrollToClue = function (appData) {
 };
 var $author$project$Controls$sendScrollToClue = function (appData) {
 	return _Utils_Tuple2(
-		$author$project$Datatypes$Loaded(appData),
+		$author$project$Datatypes$PuzzlePage(
+			$author$project$Datatypes$Loaded(appData)),
 		$author$project$Controls$scrollToClue(appData));
 };
 var $author$project$Controls$sendUpdateData = F4(
@@ -7315,7 +7310,8 @@ var $author$project$Controls$sendUpdateData = F4(
 			A2($author$project$Datatypes$RowCol, row, col),
 			letter);
 		return _Utils_Tuple2(
-			$author$project$Datatypes$Loaded(appData),
+			$author$project$Datatypes$PuzzlePage(
+				$author$project$Datatypes$Loaded(appData)),
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
@@ -7372,10 +7368,11 @@ var $author$project$Controls$handleKeyInput = F2(
 							$author$project$Controls$selectPreviousClue(appData));
 					case 'EscapeKey':
 						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								_Utils_update(
-									appData,
-									{modal: $author$project$Datatypes$Empty})),
+							$author$project$Datatypes$PuzzlePage(
+								$author$project$Datatypes$Loaded(
+									_Utils_update(
+										appData,
+										{modal: $author$project$Datatypes$Empty}))),
 							$elm$core$Platform$Cmd$none);
 					default:
 						return $author$project$Controls$sendScrollToClue(appData);
@@ -7429,6 +7426,7 @@ var $author$project$Controls$selectCellAndScroll = F3(
 		return $author$project$Controls$sendScrollToClue(
 			A3($author$project$Controls$selectCell, appData, rowNum, colNum));
 	});
+var $author$project$Main$sendRequestAllCells = _Platform_outgoingPort('sendRequestAllCells', $elm$json$Json$Encode$string);
 var $author$project$Controls$getSolution = function (cell) {
 	return A2(
 		$author$project$Datatypes$CellUpdateData,
@@ -7439,7 +7437,8 @@ var $author$project$Controls$solveActiveClue = function (appData) {
 	var _v0 = appData.activeClueIndex;
 	if (_v0.$ === 'Nothing') {
 		return _Utils_Tuple2(
-			$author$project$Datatypes$Loaded(appData),
+			$author$project$Datatypes$PuzzlePage(
+				$author$project$Datatypes$Loaded(appData)),
 			$elm$core$Platform$Cmd$none);
 	} else {
 		var index = _v0.a;
@@ -7461,7 +7460,8 @@ var $author$project$Controls$solveActiveClue = function (appData) {
 			clueCells);
 		var newData = A3($elm$core$Array$foldl, $author$project$Controls$updateCellData, appData, updateData);
 		return _Utils_Tuple2(
-			$author$project$Datatypes$Loaded(newData),
+			$author$project$Datatypes$PuzzlePage(
+				$author$project$Datatypes$Loaded(newData)),
 			$elm$core$Platform$Cmd$batch(
 				$elm$core$Array$toList(
 					A2(
@@ -7480,79 +7480,113 @@ var $author$project$Controls$updateOtherClue = F2(
 	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		switch (model.$) {
-			case 'Loading':
-				if (msg.$ === 'FetchedData') {
-					var data = msg.a;
-					if (data.$ === 'Ok') {
-						var appData = data.a;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(appData),
-							$elm$core$Platform$Cmd$none);
+		if (model.$ === 'LandingPage') {
+			if (msg.$ === 'GoToPuzzle') {
+				return _Utils_Tuple2(
+					$author$project$Datatypes$PuzzlePage($author$project$Datatypes$Loading),
+					$elm$core$Platform$Cmd$batch(
+						_List_fromArray(
+							[
+								$elm$http$Http$get(
+								{
+									expect: A2($elm$http$Http$expectJson, $author$project$Datatypes$FetchedData, $author$project$Data$decodeAppData),
+									url: 'data/Oct07-2019.json'
+								}),
+								$author$project$Main$sendRequestAllCells('')
+							])));
+			} else {
+				return _Utils_Tuple2($author$project$Datatypes$LandingPage, $elm$core$Platform$Cmd$none);
+			}
+		} else {
+			var puzzleData = model.a;
+			switch (puzzleData.$) {
+				case 'Failure':
+					return _Utils_Tuple2(
+						$author$project$Datatypes$PuzzlePage($author$project$Datatypes$Failure),
+						$elm$core$Platform$Cmd$none);
+				case 'Loading':
+					if (msg.$ === 'FetchedData') {
+						var data = msg.a;
+						if (data.$ === 'Ok') {
+							var appData = data.a;
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(appData)),
+								$elm$core$Platform$Cmd$none);
+						} else {
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage($author$project$Datatypes$Failure),
+								$elm$core$Platform$Cmd$none);
+						}
 					} else {
-						return _Utils_Tuple2($author$project$Datatypes$Failure, $elm$core$Platform$Cmd$none);
+						return _Utils_Tuple2(
+							$author$project$Datatypes$PuzzlePage($author$project$Datatypes$Loading),
+							$elm$core$Platform$Cmd$none);
 					}
-				} else {
-					return _Utils_Tuple2($author$project$Datatypes$Loading, $elm$core$Platform$Cmd$none);
-				}
-			case 'Loaded':
-				var appData = model.a;
-				switch (msg.$) {
-					case 'KeyPressed':
-						var key = msg.a;
-						return A2($author$project$Controls$handleKeyInput, key, appData);
-					case 'CellClicked':
-						var rowNum = msg.a;
-						var colNum = msg.b;
-						return A3($author$project$Controls$selectCellAndScroll, appData, rowNum, colNum);
-					case 'ClueClicked':
-						var clueIndex = msg.a;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								A2($author$project$Controls$setActiveClue, appData, clueIndex)),
-							$elm$core$Platform$Cmd$none);
-					case 'CellUpdate':
-						var cellUpdateData = msg.a;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								A2($author$project$Controls$updateCellData, cellUpdateData, appData)),
-							$elm$core$Platform$Cmd$none);
-					case 'CloseModal':
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								_Utils_update(
-									appData,
-									{modal: $author$project$Datatypes$Empty})),
-							$elm$core$Platform$Cmd$none);
-					case 'SetModalInfo':
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								_Utils_update(
-									appData,
-									{modal: $author$project$Datatypes$Info})),
-							$elm$core$Platform$Cmd$none);
-					case 'SolveActiveClue':
-						return $author$project$Controls$solveActiveClue(appData);
-					case 'CheckActiveClue':
-						return $author$project$Controls$checkActiveClue(appData);
-					case 'HandleSocketMessage':
-						var message = msg.a;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(appData),
-							$elm$core$Platform$Cmd$none);
-					case 'OtherClueUpdated':
-						var otherClueIndex = msg.a;
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(
-								A2($author$project$Controls$updateOtherClue, otherClueIndex, appData)),
-							$elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2(
-							$author$project$Datatypes$Loaded(appData),
-							$elm$core$Platform$Cmd$none);
-				}
-			default:
-				return _Utils_Tuple2($author$project$Datatypes$Failure, $elm$core$Platform$Cmd$none);
+				default:
+					var appData = puzzleData.a;
+					switch (msg.$) {
+						case 'KeyPressed':
+							var key = msg.a;
+							return A2($author$project$Controls$handleKeyInput, key, appData);
+						case 'CellClicked':
+							var rowNum = msg.a;
+							var colNum = msg.b;
+							return A3($author$project$Controls$selectCellAndScroll, appData, rowNum, colNum);
+						case 'ClueClicked':
+							var clueIndex = msg.a;
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(
+										A2($author$project$Controls$setActiveClue, appData, clueIndex))),
+								$elm$core$Platform$Cmd$none);
+						case 'CellUpdate':
+							var cellUpdateData = msg.a;
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(
+										A2($author$project$Controls$updateCellData, cellUpdateData, appData))),
+								$elm$core$Platform$Cmd$none);
+						case 'CloseModal':
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(
+										_Utils_update(
+											appData,
+											{modal: $author$project$Datatypes$Empty}))),
+								$elm$core$Platform$Cmd$none);
+						case 'SetModalInfo':
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(
+										_Utils_update(
+											appData,
+											{modal: $author$project$Datatypes$Info}))),
+								$elm$core$Platform$Cmd$none);
+						case 'SolveActiveClue':
+							return $author$project$Controls$solveActiveClue(appData);
+						case 'CheckActiveClue':
+							return $author$project$Controls$checkActiveClue(appData);
+						case 'HandleSocketMessage':
+							var message = msg.a;
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(appData)),
+								$elm$core$Platform$Cmd$none);
+						case 'OtherClueUpdated':
+							var otherClueIndex = msg.a;
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(
+										A2($author$project$Controls$updateOtherClue, otherClueIndex, appData))),
+								$elm$core$Platform$Cmd$none);
+						default:
+							return _Utils_Tuple2(
+								$author$project$Datatypes$PuzzlePage(
+									$author$project$Datatypes$Loaded(appData)),
+								$elm$core$Platform$Cmd$none);
+					}
+			}
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -8678,31 +8712,31 @@ var $author$project$Cell$renderGrid = F4(
 	});
 var $author$project$Datatypes$CloseModal = {$: 'CloseModal'};
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $author$project$Controls$hideModal = function (modal) {
+	if (modal.$ === 'Info') {
+		return false;
+	} else {
+		return true;
+	}
+};
 var $elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		$elm$html$Html$Attributes$stringProperty,
 		'href',
 		_VirtualDom_noJavaScriptUri(url));
 };
-var $author$project$Controls$showModal = function (modal) {
-	if (modal.$ === 'Info') {
-		return true;
-	} else {
-		return false;
-	}
-};
 var $author$project$Controls$renderModal = function (appData) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('cluegrid-modal'),
+				$elm$html$Html$Attributes$class('cluegrid-modal-background'),
 				$elm$html$Html$Attributes$classList(
 				_List_fromArray(
 					[
 						_Utils_Tuple2(
-						'cluegrid-modal-background',
-						$author$project$Controls$showModal(appData.modal))
+						'cluegrid-modal-hidden',
+						$author$project$Controls$hideModal(appData.modal))
 					])),
 				$elm$html$Html$Events$onClick($author$project$Datatypes$CloseModal)
 			]),
@@ -8829,7 +8863,37 @@ var $author$project$Controls$renderModal = function (appData) {
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('created with ❤️ by '),
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$href('https://github.com/samhattangady/cluegrid/')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('built')
+									])),
+								$elm$html$Html$text(' with '),
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$href('https://elm-lang.org')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('elm')
+									]))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-modal-info')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('created with ♥ by '),
 								A2(
 								$elm$html$Html$a,
 								_List_fromArray(
@@ -8861,31 +8925,12 @@ var $author$project$Controls$renderAppData = function (appData) {
 var $author$project$Datatypes$CheckActiveClue = {$: 'CheckActiveClue'};
 var $author$project$Datatypes$SetModalInfo = {$: 'SetModalInfo'};
 var $author$project$Datatypes$SolveActiveClue = {$: 'SolveActiveClue'};
-var $author$project$Controls$renderHeaderCell = function (_v0) {
-	var letter = _v0.a;
-	var num = _v0.b;
-	var solution = function () {
-		if (letter === '') {
-			return '.';
-		} else {
-			return '';
-		}
-	}();
-	return A4(
-		$author$project$Cell$renderCell,
-		A8(
-			$author$project$Datatypes$Cell,
-			solution,
-			-1,
-			-1,
-			num,
-			$elm$core$Maybe$Nothing,
-			$elm$core$Maybe$Nothing,
-			$elm$core$Maybe$Just(letter),
-			$elm$core$Maybe$Nothing),
-		$elm$core$Maybe$Nothing,
-		$elm$core$Maybe$Nothing,
-		$elm$core$Maybe$Nothing);
+var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
 };
 var $author$project$Controls$renderHeaderRow = A2(
 	$elm$html$Html$div,
@@ -8901,27 +8946,26 @@ var $author$project$Controls$renderHeaderRow = A2(
 				[
 					$elm$html$Html$Attributes$class('cluegrid-header-row')
 				]),
-			A2(
-				$elm$core$List$map,
-				function (letter) {
-					return $author$project$Controls$renderHeaderCell(letter);
-				},
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'C',
-						$elm$core$Maybe$Just(3)),
-						_Utils_Tuple2('L', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2('U', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2('E', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2('', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2(
-						'G',
-						$elm$core$Maybe$Just(7)),
-						_Utils_Tuple2('R', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2('I', $elm$core$Maybe$Nothing),
-						_Utils_Tuple2('D', $elm$core$Maybe$Nothing)
-					]))),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-header-logo-container')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$img,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('cluegrid-header-logo'),
+									$elm$html$Html$Attributes$src('cluegrid_logo.png')
+								]),
+							_List_Nil)
+						]))
+				])),
 			A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -8965,60 +9009,100 @@ var $author$project$Controls$renderHeaderRow = A2(
 						]))
 				]))
 		]));
+var $author$project$Datatypes$GoToPuzzle = {$: 'GoToPuzzle'};
+var $author$project$Landing$renderLandingPage = A2(
+	$elm$browser$Browser$Document,
+	'Landing',
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('cluegrid-fullscreen-container')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$img,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('landing-page-logo'),
+							$elm$html$Html$Attributes$src('cluegrid_logo.png')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('box'),
+							$elm$html$Html$Events$onClick($author$project$Datatypes$GoToPuzzle)
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('box')
+						]))
+				]))
+		]));
 var $author$project$Main$view = function (model) {
-	var body = function () {
-		switch (model.$) {
-			case 'Loaded':
-				var appData = model.a;
-				return $author$project$Controls$renderAppData(appData);
-			case 'Failure':
-				return A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Could not fetch data ‾\\_(ツ)_/‾')
-						]));
-			default:
-				return A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('loading data...')
-						]));
-		}
-	}();
-	return A2(
-		$elm$browser$Browser$Document,
-		'Cluegrid',
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('cluegrid-fullscreen-container')
-					]),
-				_List_fromArray(
-					[
-						$author$project$Controls$renderHeaderRow,
-						A2(
+	if (model.$ === 'LandingPage') {
+		return $author$project$Landing$renderLandingPage;
+	} else {
+		var puzzleData = model.a;
+		var body = function () {
+			switch (puzzleData.$) {
+				case 'Loaded':
+					var appData = puzzleData.a;
+					return $author$project$Controls$renderAppData(appData);
+				case 'Failure':
+					return A2(
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('cluegrid-application-container')
+								$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
 							]),
 						_List_fromArray(
-							[body]))
-					]))
-			]));
+							[
+								$elm$html$Html$text('Could not fetch data ‾\\_(ツ)_/‾')
+							]));
+				default:
+					return A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('cluegrid-data-not-loaded')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('loading data...')
+							]));
+			}
+		}();
+		return A2(
+			$elm$browser$Browser$Document,
+			'Cluegrid',
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('cluegrid-fullscreen-container')
+						]),
+					_List_fromArray(
+						[
+							$author$project$Controls$renderHeaderRow,
+							A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('cluegrid-application-container')
+								]),
+							_List_fromArray(
+								[body]))
+						]))
+				]));
+	}
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{init: $author$project$Main$init, onUrlChange: $author$project$Main$onUrlChange, onUrlRequest: $author$project$Main$onUrlRequest, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
