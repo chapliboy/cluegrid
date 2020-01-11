@@ -17,3 +17,4 @@ dist.zip
 # data and logs
 public/data
 build_logs.log
+public/cluegrid.js
