@@ -15,14 +15,16 @@
       node: document.getElementById("cluegrid-app"),
     });
     window.addEventListener('keydown', event=> {
-      if (["ArrowUp", "ArrowDown", "Tab"].includes(event.code)) {
+      if (["ArrowUp", "ArrowDown", "ArrowRight", "ArrowLeft", "Tab"].includes(event.code)) {
         // We use some of these keys to navigate around the app
         // and don't want their default behaviours
         event.preventDefault();
       }
-      // TODO (06 Jan 2020 sam): Prevent all letters when ctrl is pressed
-      // Otherwise copying text etc. ends up affecting the grid
-      if (event.code == "Tab" && event.shiftKey) {
+      if (event.metaKey) {
+        // Prevent all letters when ctrl is pressed
+        // Otherwise copying text etc. ends up affecting the grid
+      }
+      else if (event.code == "Tab" && event.shiftKey) {
         app.ports.recieveKeyPress.send("ShiftTab");
       } else {
         app.ports.recieveKeyPress.send(event.code);
@@ -30,60 +32,50 @@
     })
 
     function setup_websocket() {
-      let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
-      // let SOCKET_LINK = 'ws://127.0.0.1:8080/?name=Medwig'
+      // let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
+      let SOCKET_LINK = 'ws://127.0.0.1:8080/'
+      console.log('trying to create new ws')
       var ws = new WebSocket(SOCKET_LINK);
+      var channelName = ''
 
       ws.onopen = function () {
         while (msgs.length > 0) {
-          qMsg = msgs.pop();
-          ws_send(qMsg[0], qMsg[1])
+          qMsg = msgs.shift();
+          ws_send(qMsg)
         }
       }
       ws.onmessage = function(message) {
-        message = JSON.parse(message.data);
-        if (message.message == 'update_entry') {
-          app.ports.recieveCellUpdate.send(message.data);
+        socketMessage = JSON.parse(message.data);
+        if (socketMessage.message === 'channel_details') {
+          channelName = socketMessage.data.channelName;
         }
-        else if (message.message == 'update_other_clue') {
-          app.ports.recieveOtherClueUpdate.send(message.data);
-        }
+        app.ports.recieveSocketMessage.send(socketMessage)
       }
       ws.onclose = function(message) {
         // restart websocket if it closes, and rerequest cells if we missed anything
+        // TODO (14 Jan 2020 sam): Also we need to rejoin the channel.
+        console.log('websocket closed. =/ restarting that shit');
         setup_websocket()
-        ws_send('request_all_cells', '');
+        ws_send({message: 'rejoin_room', data: channelName})
+        ws_send({message: 'request_all_cells'});
       }
 
       // If we try to send a message before the socket is ready, it causes some
       // issues. So we want to save all the messages that need to be sent, and then
       // send them once the socket is opened
       var msgs = []
-      function ws_send(message, data) {
+      function ws_send(message) {
         if (ws.readyState !== 1) {
-          msgs.push([message, data])
+          msgs.push(message)
         } else {
-          ws.send(JSON.stringify({message: message, data: data}));
+          ws.send(JSON.stringify(message));
         }
       }
-
-      app.ports.sendCellUpdate.subscribe(function(data) {
-        ws_send('update_entry', data);
-      })
-
-      app.ports.sendRequestAllCells.subscribe(function(data) {
-        ws_send('request_all_cells', data);
-      })
-
-      app.ports.sendClueIndexUpdate.subscribe(function(data) {
-        ws_send('update_active_clue', data)
+      app.ports.sendSocketMessage.subscribe(function(data) {
+        ws_send(data)
       })
     }
     setup_websocket()
-
-    // app.ports.sendJoinChannel.subscribe(function(channelName) {
-    //   ws_send('join_channel', channelName);
-    // })
   </script>
 </body>
 </html>

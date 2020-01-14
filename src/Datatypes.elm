@@ -20,38 +20,75 @@ module Datatypes exposing
     , ArrowKeyDirection(..)
     , Cell
     , CellUpdateData
+    , ChannelDetails
     , ChannelName
     , Clue
     , ClueDirection(..)
     , CluegridInfo
-    , CluegridSize
     , Clues
     , ControlKey(..)
+    , CrossWordListingInfo
     , Grid
     , KeyboardInput(..)
+    , LandingData(..)
     , ModalContents(..)
     , Model(..)
     , Msg(..)
+    , PageData
     , PuzzleData(..)
+    , RecieveSocketMessage
     , RowCol
-    , SocketMessage
+    , SendSocketMessage
+    , cellUpdateDataDecoder
+    , channelDetailsDecoder
+    , crosswordListingDecoder
     )
 
 import Array exposing (Array)
+import Browser.Navigation exposing (Key)
 import Html exposing (Html)
 import Http
-import Json.Encode as E
+import Json.Decode as Decode
+import Json.Encode as Encode
+import Url exposing (Url)
 
 
 type Model
-    = LandingPage
+    = LandingPage LandingData
     | PuzzlePage PuzzleData
 
 
+type LandingData
+    = LoadingListing PageData
+    | FailedJoining PageData
+    | LoadedListing ( List CrossWordListingInfo, PageData )
+
+
+type alias PageData =
+    { url : Url
+    , key : Key
+    }
+
+
+type alias CrossWordListingInfo =
+    { title : String
+    , link : String
+    }
+
+
+crosswordListingDecoder : Decode.Decoder (List CrossWordListingInfo)
+crosswordListingDecoder =
+    Decode.list
+        (Decode.map2 CrossWordListingInfo
+            (Decode.field "title" Decode.string)
+            (Decode.field "link" Decode.string)
+        )
+
+
 type PuzzleData
-    = Loading
-    | Failure
-    | Loaded AppData
+    = Loading ChannelDetails
+    | Failure ChannelDetails
+    | Loaded ( ChannelDetails, AppData )
 
 
 type Msg
@@ -59,15 +96,15 @@ type Msg
     | KeyPressed String
     | CellClicked Int Int
     | ClueClicked Int
-    | CellUpdate CellUpdateData
     | SetScroll
-    | HandleSocketMessage E.Value
+    | HandleSocketMessage RecieveSocketMessage
     | CloseModal
-    | OtherClueUpdated ActiveClueIndex
     | SolveActiveClue
     | CheckActiveClue
     | SetModalInfo
-    | GoToPuzzle
+    | SetModalInvite
+    | RequestCreateRoom String
+    | GoHome
     | NoOp
 
 
@@ -79,10 +116,31 @@ type alias ClueIndex =
     Int
 
 
-type SocketMessage
-    = JoinChannelMessage ChannelName
-    | CellUpdateMessage CellUpdateData
-    | ActiveClueUpdateMessage ClueIndex
+type alias RecieveSocketMessage =
+    { message : String
+    , data : Decode.Value
+    }
+
+
+type alias SendSocketMessage =
+    { message : String
+    , data : Encode.Value
+    }
+
+
+type alias ChannelDetails =
+    { channelName : String
+    , link : String
+    , pageData : Maybe PageData
+    }
+
+
+channelDetailsDecoder : Decode.Decoder ChannelDetails
+channelDetailsDecoder =
+    Decode.map3 ChannelDetails
+        (Decode.field "channel_name" Decode.string)
+        (Decode.field "link" Decode.string)
+        (Decode.succeed Nothing)
 
 
 type alias Clue =
@@ -126,6 +184,16 @@ type alias CellUpdateData =
     }
 
 
+cellUpdateDataDecoder : Decode.Decoder CellUpdateData
+cellUpdateDataDecoder =
+    Decode.map2 CellUpdateData
+        (Decode.map2 RowCol
+            (Decode.at [ "cell", "row" ] Decode.int)
+            (Decode.at [ "cell", "col" ] Decode.int)
+        )
+        (Decode.field "letter" (Decode.nullable Decode.string))
+
+
 type alias ActiveClueIndex =
     Maybe Int
 
@@ -136,12 +204,6 @@ type alias ActiveCell =
 
 type alias Grid =
     Array (Array Cell)
-
-
-type alias CluegridSize =
-    { rows : Int
-    , cols : Int
-    }
 
 
 type alias CluegridInfo =
@@ -156,12 +218,12 @@ type alias CluegridInfo =
 type ModalContents
     = Empty
     | Info
+    | Invite
 
 
 type alias AppData =
     { clues : Clues
     , grid : Grid
-    , cluegridSize : CluegridSize
     , cluegridInfo : CluegridInfo
     , activeClueIndex : ActiveClueIndex
     , activeCell : ActiveCell

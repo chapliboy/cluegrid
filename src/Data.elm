@@ -2,19 +2,15 @@ module Data exposing (decodeAppData)
 
 import Cell exposing (decodeGrid)
 import Clue exposing (decodeClues)
-import Datatypes exposing (AppData, CluegridInfo, CluegridSize, ModalContents(..))
-import Json.Decode exposing (Decoder, field, int, map2, map5, map8, string, succeed)
+import Datatypes exposing (AppData, CluegridInfo, ModalContents(..))
+import Json.Decode exposing (Decoder, field, int, map5, map7, string, succeed)
 
 
 decodeAppData : Decoder AppData
 decodeAppData =
-    map8 AppData
+    map7 AppData
         (field "clues" decodeClues)
         (field "grid" decodeGrid)
-        (map2 CluegridSize
-            (field "size" (field "rows" int))
-            (field "size" (field "cols" int))
-        )
         (map5 CluegridInfo
             (field "info" (field "date" string))
             (field "info" (field "title" string))

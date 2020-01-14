@@ -1,24 +1,29 @@
-port module Controls exposing (checkActiveClue, handleKeyInput, renderAppData, renderHeaderRow, selectCell, selectCellAndScroll, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
+port module Controls exposing (checkActiveClue, handleKeyInput, handleLandingSocketMessage, handlePuzzleSocketMessage, renderAppData, renderHeaderRow, selectCell, selectCellAndScroll, sendRequestAllCells, sendSocketMessage, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 
 import Array
 import Browser.Dom as Dom
+import Browser.Navigation
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry)
 import Clue exposing (getClueId, renderCluesData)
-import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ClueDirection(..), Clues, ControlKey(..), KeyboardInput(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RowCol, SocketMessage)
-import Html exposing (Html, a, div, i, img, text)
+import Data exposing (decodeAppData)
+import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ChannelDetails, ClueDirection(..), Clues, ControlKey(..), CrossWordListingInfo, KeyboardInput(..), LandingData(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RecieveSocketMessage, RowCol, SendSocketMessage, cellUpdateDataDecoder, channelDetailsDecoder, crosswordListingDecoder)
+import Html exposing (Html, a, br, div, i, img, text)
 import Html.Attributes exposing (class, classList, href, src)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, stopPropagationOn)
+import Http
+import Json.Decode as Decode exposing (decodeValue, field, int, nullable)
+import Json.Encode as Encode
 import Task
+import Url
+import Url.Builder
 
 
-
--- port sendMessage : SocketMessage -> Cmd msg
-
-
-port sendCellUpdate : CellUpdateData -> Cmd msg
+port sendSocketMessage : SendSocketMessage -> Cmd msg
 
 
-port sendClueIndexUpdate : ActiveClueIndex -> Cmd msg
+sendRequestAllCells : Cmd Msg
+sendRequestAllCells =
+    sendSocketMessage (SendSocketMessage "request_all_cells" Encode.null)
 
 
 updateOtherClue : ActiveClueIndex -> AppData -> AppData
@@ -124,6 +129,54 @@ scrollToClue appData =
         ]
 
 
+sendCellUpdate : CellUpdateData -> Cmd msg
+sendCellUpdate cellUpdateData =
+    let
+        entry =
+            case cellUpdateData.letter of
+                Nothing ->
+                    Encode.null
+
+                Just letter ->
+                    Encode.string letter
+    in
+    sendSocketMessage
+        -- TODO (13 Jan 2020 sam): This seems to sometimes seems to send data as nil
+        -- See if we can figure this out. I'm reporting this from a backend perspective
+        -- Not seen it from the frontend as of yet.
+        (SendSocketMessage
+            "update_entry"
+            (Encode.object
+                [ ( "cell"
+                  , Encode.object
+                        [ ( "row", Encode.int cellUpdateData.cell.row )
+                        , ( "col", Encode.int cellUpdateData.cell.col )
+                        ]
+                  )
+                , ( "letter", entry )
+                ]
+            )
+        )
+
+
+sendClueIndexUpdate : ActiveClueIndex -> Cmd msg
+sendClueIndexUpdate activeClueIndex =
+    let
+        index =
+            case activeClueIndex of
+                Nothing ->
+                    Encode.null
+
+                Just i ->
+                    Encode.int i
+    in
+    sendSocketMessage
+        (SendSocketMessage
+            "update_active_clue"
+            index
+        )
+
+
 getScrollPortHeight : Dom.Viewport -> Dom.Element -> Dom.Element -> Float
 getScrollPortHeight viewport clue scrollArea =
     if clue.element.y < scrollArea.element.y then
@@ -139,18 +192,18 @@ getScrollPortHeight viewport clue scrollArea =
         viewport.viewport.y
 
 
-sendScrollToClue : AppData -> ( Model, Cmd Msg )
-sendScrollToClue appData =
-    ( PuzzlePage (Loaded appData), scrollToClue appData )
+sendScrollToClue : ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+sendScrollToClue ( channelDetails, appData ) =
+    ( PuzzlePage (Loaded ( channelDetails, appData )), scrollToClue appData )
 
 
-sendUpdateData : Maybe String -> Int -> Int -> AppData -> ( Model, Cmd Msg )
-sendUpdateData letter row col appData =
+sendUpdateData : Maybe String -> Int -> Int -> ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+sendUpdateData letter row col ( channelDetails, appData ) =
     let
         cellUpdateData =
             CellUpdateData (RowCol row col) letter
     in
-    ( PuzzlePage (Loaded appData)
+    ( PuzzlePage (Loaded ( channelDetails, appData ))
     , Cmd.batch
         [ sendCellUpdate cellUpdateData
         , scrollToClue appData
@@ -182,8 +235,8 @@ selectPreviousClue appData =
     changeClueIndex appData -1
 
 
-handleKeyInput : String -> AppData -> ( Model, Cmd Msg )
-handleKeyInput key appData =
+handleKeyInput : String -> ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+handleKeyInput key ( channelDetails, appData ) =
     let
         keyInput =
             keyToKeyboardInput key
@@ -192,8 +245,7 @@ handleKeyInput key appData =
         ControlKey control ->
             case control of
                 EnterKey ->
-                    toggleActiveClue appData
-                        |> sendScrollToClue
+                    sendScrollToClue ( channelDetails, toggleActiveClue appData )
 
                 BackspaceKey ->
                     let
@@ -205,40 +257,40 @@ handleKeyInput key appData =
                                 Just ( r, c ) ->
                                     ( r, c )
                     in
-                    changeActiveEntry appData Nothing
+                    ( channelDetails, changeActiveEntry appData Nothing )
                         |> sendUpdateData Nothing row col
 
                 TabKey ->
-                    selectNextClue appData
+                    ( channelDetails, selectNextClue appData )
                         |> sendScrollToClue
 
                 ShiftTabKey ->
-                    selectPreviousClue appData
+                    ( channelDetails, selectPreviousClue appData )
                         |> sendScrollToClue
 
                 EscapeKey ->
-                    ( PuzzlePage (Loaded { appData | modal = Empty }), Cmd.none )
+                    ( PuzzlePage (Loaded ( channelDetails, { appData | modal = Empty } )), Cmd.none )
 
                 _ ->
-                    appData
+                    ( channelDetails, appData )
                         |> sendScrollToClue
 
         ArrowKey arrow ->
             case arrow of
                 ArrowKeyRight ->
-                    moveRight appData
+                    ( channelDetails, moveRight appData )
                         |> sendScrollToClue
 
                 ArrowKeyLeft ->
-                    moveLeft appData
+                    ( channelDetails, moveLeft appData )
                         |> sendScrollToClue
 
                 ArrowKeyUp ->
-                    moveUp appData
+                    ( channelDetails, moveUp appData )
                         |> sendScrollToClue
 
                 ArrowKeyDown ->
-                    moveDown appData
+                    ( channelDetails, moveDown appData )
                         |> sendScrollToClue
 
         LetterKey letter ->
@@ -251,11 +303,11 @@ handleKeyInput key appData =
                         Just ( r, c ) ->
                             ( r, c )
             in
-            changeActiveEntry appData (Just letter)
+            ( channelDetails, changeActiveEntry appData (Just letter) )
                 |> sendUpdateData (Just letter) row col
 
         UnsupportedKey ->
-            appData
+            ( channelDetails, appData )
                 |> sendScrollToClue
 
 
@@ -550,10 +602,9 @@ selectCell appData rowNum colNum =
             appData
 
 
-selectCellAndScroll : AppData -> Int -> Int -> ( Model, Cmd Msg )
-selectCellAndScroll appData rowNum colNum =
-    selectCell appData rowNum colNum
-        |> sendScrollToClue
+selectCellAndScroll : ( ChannelDetails, AppData ) -> Int -> Int -> ( Model, Cmd Msg )
+selectCellAndScroll ( channelDetails, appData ) rowNum colNum =
+    sendScrollToClue ( channelDetails, selectCell appData rowNum colNum )
 
 
 isPartOfClue : Int -> Cell -> Bool
@@ -605,15 +656,11 @@ checkCorrect cell =
         soln
 
 
-solveActiveClue : AppData -> ( Model, Cmd Msg )
-solveActiveClue appData =
-    -- TODO (09 Jan 2020 sam): See if the solution can be shown locally as well
-    -- Currently I'm not doing it because the only way I know how would be to
-    -- loop through the whole grid twice and get the updateData and newAppData
-    -- and that feels too clunky. And the grid looping is all nested and ugly
+solveActiveClue : ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+solveActiveClue ( channelDetails, appData ) =
     case appData.activeClueIndex of
         Nothing ->
-            ( PuzzlePage (Loaded appData), Cmd.none )
+            ( PuzzlePage (Loaded ( channelDetails, appData )), Cmd.none )
 
         Just index ->
             let
@@ -630,7 +677,7 @@ solveActiveClue appData =
                     updateData
                         |> Array.foldl updateCellData appData
             in
-            ( PuzzlePage (Loaded newData)
+            ( PuzzlePage (Loaded ( channelDetails, newData ))
             , Cmd.batch
                 (updateData
                     |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
@@ -639,11 +686,11 @@ solveActiveClue appData =
             )
 
 
-checkActiveClue : AppData -> ( Model, Cmd Msg )
-checkActiveClue appData =
+checkActiveClue : ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+checkActiveClue ( channelDetails, appData ) =
     case appData.activeClueIndex of
         Nothing ->
-            ( PuzzlePage (Loaded appData), Cmd.none )
+            ( PuzzlePage (Loaded ( channelDetails, appData )), Cmd.none )
 
         Just index ->
             let
@@ -657,7 +704,7 @@ checkActiveClue appData =
                     updateData
                         |> Array.foldl updateCellData appData
             in
-            ( PuzzlePage (Loaded newData)
+            ( PuzzlePage (Loaded ( channelDetails, newData ))
             , Cmd.batch
                 (updateData
                     |> Array.map (\cellUpdate -> sendCellUpdate cellUpdate)
@@ -666,31 +713,77 @@ checkActiveClue appData =
             )
 
 
-renderHeaderCell : ( String, Maybe Int ) -> Html Msg
-renderHeaderCell ( letter, num ) =
+handleLandingSocketMessage : RecieveSocketMessage -> LandingData -> ( Model, Cmd Msg )
+handleLandingSocketMessage socketMessage landingData =
     let
-        solution =
-            case letter of
-                "" ->
-                    "."
+        pageData =
+            case landingData of
+                LoadingListing k ->
+                    k
 
-                _ ->
-                    ""
+                FailedJoining k ->
+                    k
+
+                LoadedListing ( _, k ) ->
+                    k
     in
-    renderCell
-        (Cell
-            solution
-            -1
-            -1
-            num
-            Nothing
-            Nothing
-            (Just letter)
-            Nothing
-        )
-        Nothing
-        Nothing
-        Nothing
+    case socketMessage.message of
+        "crossword_listing" ->
+            case decodeValue crosswordListingDecoder socketMessage.data of
+                Ok crosswordListing ->
+                    ( LandingPage (LoadedListing ( crosswordListing, pageData )), Cmd.none )
+
+                Err e ->
+                    ( LandingPage landingData, Cmd.none )
+
+        "channel_full" ->
+            ( LandingPage (FailedJoining pageData), Cmd.none )
+
+        "channel_details" ->
+            case decodeValue channelDetailsDecoder socketMessage.data of
+                Ok channelDetails ->
+                    ( PuzzlePage (Loading { channelDetails | pageData = Just pageData })
+                    , Cmd.batch
+                        [ Http.get
+                            { url = channelDetails.link
+                            , expect = Http.expectJson FetchedData decodeAppData
+                            }
+                        , Browser.Navigation.pushUrl pageData.key channelDetails.channelName
+                        ]
+                    )
+
+                Err e ->
+                    ( LandingPage landingData, Cmd.none )
+
+        _ ->
+            ( LandingPage landingData, Cmd.none )
+
+
+
+-- ( LandingPage (LandingData []), Cmd.none )
+
+
+handlePuzzleSocketMessage : RecieveSocketMessage -> ( ChannelDetails, AppData ) -> ( Model, Cmd Msg )
+handlePuzzleSocketMessage socketMessage ( channelDetails, appData ) =
+    case socketMessage.message of
+        "update_other_clue" ->
+            case decodeValue (nullable int) socketMessage.data of
+                Ok otherIndex ->
+                    ( PuzzlePage (Loaded ( channelDetails, updateOtherClue otherIndex appData )), Cmd.none )
+
+                Err e ->
+                    ( PuzzlePage (Loaded ( channelDetails, appData )), Cmd.none )
+
+        "update_entry" ->
+            case decodeValue cellUpdateDataDecoder socketMessage.data of
+                Ok cellUpdateData ->
+                    ( PuzzlePage (Loaded ( channelDetails, updateCellData cellUpdateData appData )), Cmd.none )
+
+                Err e ->
+                    ( PuzzlePage (Loaded ( channelDetails, appData )), Cmd.none )
+
+        _ ->
+            ( PuzzlePage (Loaded ( channelDetails, appData )), Cmd.none )
 
 
 renderHeaderRow : Html Msg
@@ -699,8 +792,8 @@ renderHeaderRow =
         [ class "cluegrid-header-container" ]
         [ div
             [ class "cluegrid-header-row" ]
-            [ div [ class "cluegrid-header-logo-container" ]
-                [ img [ class "cluegrid-header-logo", src "cluegrid_logo.png" ] []
+            [ div [ class "cluegrid-header-logo-container", onClick GoHome ]
+                [ img [ class "cluegrid-header-logo logo", src "cluegrid_logo.png" ] []
                 ]
             ]
         , div
@@ -711,6 +804,8 @@ renderHeaderRow =
                 [ text "CHECK CLUE" ]
             , div [ class "cluegrid-header-button", onClick SetModalInfo ]
                 [ text "INFO" ]
+            , div [ class "cluegrid-header-button cluegrid-button-invite", onClick SetModalInvite ]
+                [ text "INVITE" ]
             ]
         ]
 
@@ -718,18 +813,63 @@ renderHeaderRow =
 hideModal : ModalContents -> Bool
 hideModal modal =
     case modal of
-        Info ->
-            False
-
         Empty ->
             True
 
+        _ ->
+            False
 
-renderModal : AppData -> Html Msg
-renderModal appData =
+
+renderModal : ( ChannelDetails, AppData ) -> Html Msg
+renderModal ( channelDetails, appData ) =
     -- NOTE (10 Jan 2020 sam): Structured this way so that we can animate modal
     -- closing. Would have to change it to some other way if we want to support
     -- multiple different modals
+    let
+        _ =
+            Debug.log "channelName" channelDetails.channelName
+
+        currentUrl =
+            -- TODO (14 Jan 2020 sam): The url is a bit of a scam right now...
+            -- There is a hard-coded assumption that the port will be fixed,
+            -- same for protocol etc. Just don't feel like bothering. I was
+            -- initially using pageData.url. But that causes a bug if we come
+            -- to an existing puzzle, and then go back and create anew one...
+            case channelDetails.pageData of
+                Nothing ->
+                    ""
+
+                Just pageData ->
+                    pageData.url.host
+                        ++ "/"
+                        ++ channelDetails.channelName
+
+        modalInfo =
+            case appData.modal of
+                Info ->
+                    [ div [ class "cluegrid-modal-info-title" ] [ text appData.cluegridInfo.title ]
+                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Author: " ++ appData.cluegridInfo.author) ]
+                    , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Editor: " ++ appData.cluegridInfo.editor) ]
+                    , div [ class "cluegrid-modal-info" ] [ text appData.cluegridInfo.copyright ]
+                    ]
+
+                Invite ->
+                    [ div
+                        [ class "cluegrid-modal-invite"
+                        , stopPropagationOn "click" (Decode.succeed ( NoOp, False ))
+                        ]
+                        [ text "invite a friend with the link"
+                        , br [] []
+                        , text currentUrl
+                        , br [] []
+                        , br [] []
+                        , div [ class "cluegrid-modal-info" ] [ text "or just copy the link in your browser" ]
+                        ]
+                    ]
+
+                _ ->
+                    []
+    in
     div
         [ class "cluegrid-modal-background"
         , classList [ ( "cluegrid-modal-hidden", hideModal appData.modal ) ]
@@ -739,35 +879,32 @@ renderModal appData =
             [ div [ class "cluegrid-modal-header" ] [ text "cluegrid" ]
             , div [ class "cluegrid-modal-vert-spacer" ] []
             , div [ class "cluegrid-modal-vert-spacer" ] []
-            , div [ class "cluegrid-modal-info-title" ] [ text appData.cluegridInfo.title ]
-            , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Author: " ++ appData.cluegridInfo.author) ]
-            , div [ class "cluegrid-modal-info cluegrid-modal-bold" ] [ text ("Editor: " ++ appData.cluegridInfo.editor) ]
-            , div [ class "cluegrid-modal-info" ] [ text appData.cluegridInfo.copyright ]
+            , div [ class "cluegrid-modal-center" ] modalInfo
             , div [ class "cluegrid-modal-vert-spacer" ] []
             , div [ class "cluegrid-modal-vert-spacer" ] []
             , div [ class "cluegrid-modal-vert-spacer" ] []
-            , div [ class "cluegrid-modal-info" ]
-                [ text "data from "
-                , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
-                ]
             , div [ class "cluegrid-modal-info" ]
                 [ a [ href "https://github.com/samhattangady/cluegrid/" ] [ text "built" ]
                 , text " with "
                 , a [ href "https://elm-lang.org" ] [ text "elm" ]
                 ]
             , div [ class "cluegrid-modal-info" ]
-                [ text "created with ♥ by "
+                [ text "data from "
+                , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
+                ]
+            , div [ class "cluegrid-modal-info" ]
+                [ text "created by "
                 , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
                 ]
             ]
         ]
 
 
-renderAppData : AppData -> Html Msg
-renderAppData appData =
+renderAppData : ( ChannelDetails, AppData ) -> Html Msg
+renderAppData ( channelDetails, appData ) =
     div
         [ class "cluegrid-container" ]
         [ renderGrid appData.grid appData.activeClueIndex appData.otherClueIndex appData.activeCell
         , renderCluesData appData.clues appData.grid appData.activeClueIndex
-        , renderModal appData
+        , renderModal ( channelDetails, appData )
         ]

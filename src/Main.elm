@@ -3,31 +3,22 @@ port module Main exposing (..)
 import Browser
 import Browser.Events
 import Browser.Navigation exposing (Key)
-import Controls exposing (checkActiveClue, handleKeyInput, renderAppData, renderHeaderRow, selectCellAndScroll, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
+import Controls exposing (checkActiveClue, handleKeyInput, handleLandingSocketMessage, handlePuzzleSocketMessage, renderAppData, renderHeaderRow, selectCellAndScroll, sendRequestAllCells, sendSocketMessage, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 import Data exposing (decodeAppData)
-import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelName, Clues, ModalContents(..), Model(..), Msg(..), PuzzleData(..), SocketMessage)
+import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelDetails, ChannelName, Clues, LandingData(..), ModalContents(..), Model(..), Msg(..), PageData, PuzzleData(..), RecieveSocketMessage, SendSocketMessage)
 import Html exposing (div, text)
 import Html.Attributes exposing (class)
 import Http
 import Json.Decode exposing (field, map, string)
-import Json.Encode as E
-import Landing exposing (renderLandingPage)
+import Json.Encode as Encode
+import Landing exposing (renderLandingPage, requestCreateRoom)
 import Url exposing (Url)
-
-
-port recieveCellUpdate : (CellUpdateData -> msg) -> Sub msg
 
 
 port recieveKeyPress : (String -> msg) -> Sub msg
 
 
-port recieveOtherClueUpdate : (ActiveClueIndex -> msg) -> Sub msg
-
-
-port sendRequestAllCells : String -> Cmd msg
-
-
-port recieveSocketMessage : (E.Value -> msg) -> Sub msg
+port recieveSocketMessage : (RecieveSocketMessage -> msg) -> Sub msg
 
 
 main =
@@ -41,9 +32,14 @@ main =
         }
 
 
-getChannelName : ChannelName
-getChannelName =
-    "Hedwig"
+sendRequestCrosswordListing : Cmd msg
+sendRequestCrosswordListing =
+    sendSocketMessage (SendSocketMessage "request_all_crosswords" Encode.null)
+
+
+sendLeaveRoom : Cmd msg
+sendLeaveRoom =
+    sendSocketMessage (SendSocketMessage "leave_room" Encode.null)
 
 
 onUrlChange : Url -> Msg
@@ -56,129 +52,163 @@ onUrlRequest urlRequest =
     NoOp
 
 
+sendJoinChannel : String -> Cmd Msg
+sendJoinChannel channelName =
+    sendSocketMessage
+        (SendSocketMessage
+            "join_room"
+            (Encode.string channelName)
+        )
+
+
 init : () -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    --     ( Loading
-    --     , Cmd.batch
-    --         [ Http.get
-    --             { url = "data/Oct07-2019.json"
-    --             , expect = Http.expectJson FetchedData decodeAppData
-    --             }
-    --         , sendRequestAllCells ""
-    --         ]
-    --     )
-    ( LandingPage, Cmd.none )
+    case url.path of
+        "/" ->
+            ( LandingPage (LoadingListing (PageData url key))
+            , sendRequestCrosswordListing
+            )
+
+        path ->
+            ( LandingPage (LoadingListing (PageData url key))
+            , sendJoinChannel path
+            )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        LandingPage ->
+        LandingPage landingData ->
+            let
+                pageData =
+                    case landingData of
+                        LoadingListing pd ->
+                            pd
+
+                        FailedJoining pd ->
+                            pd
+
+                        LoadedListing ( _, pd ) ->
+                            pd
+            in
             case msg of
-                GoToPuzzle ->
-                    ( PuzzlePage Loading
+                RequestCreateRoom link ->
+                    ( LandingPage landingData, requestCreateRoom link )
+
+                HandleSocketMessage message ->
+                    handleLandingSocketMessage message landingData
+
+                GoHome ->
+                    ( LandingPage (LoadingListing pageData)
                     , Cmd.batch
-                        [ Http.get
-                            { url = "data/Oct07-2019.json"
-                            , expect = Http.expectJson FetchedData decodeAppData
-                            }
-                        , sendRequestAllCells ""
+                        [ Browser.Navigation.pushUrl pageData.key "/"
+                        , sendRequestCrosswordListing
                         ]
                     )
 
                 _ ->
-                    ( LandingPage, Cmd.none )
+                    ( model, Cmd.none )
 
         PuzzlePage puzzleData ->
             case puzzleData of
-                Failure ->
-                    ( PuzzlePage Failure, Cmd.none )
+                Failure channelDetails ->
+                    ( PuzzlePage puzzleData, Cmd.none )
 
-                Loading ->
+                Loading channelDetails ->
                     case msg of
                         FetchedData data ->
                             case data of
                                 Ok appData ->
-                                    ( PuzzlePage (Loaded appData), Cmd.none )
+                                    ( PuzzlePage (Loaded ( channelDetails, appData )), sendRequestAllCells )
 
                                 Err _ ->
-                                    ( PuzzlePage Failure, Cmd.none )
+                                    ( PuzzlePage (Failure channelDetails), Cmd.none )
 
                         _ ->
-                            ( PuzzlePage Loading, Cmd.none )
+                            ( model, Cmd.none )
 
-                Loaded appData ->
+                Loaded ( channelDetails, appData ) ->
                     case msg of
-                        -- TODO (13 Dec 2019 sam): See if we should pass the clues-container
-                        -- scroll here as a Cmd msg.
                         KeyPressed key ->
-                            handleKeyInput key appData
+                            handleKeyInput key ( channelDetails, appData )
 
                         CellClicked rowNum colNum ->
-                            selectCellAndScroll appData rowNum colNum
+                            selectCellAndScroll ( channelDetails, appData ) rowNum colNum
 
-                        -- ( Loaded (selectCell appData rowNum colNum), Cmd.none )
                         ClueClicked clueIndex ->
-                            ( PuzzlePage (Loaded (setActiveClue appData clueIndex)), Cmd.none )
-
-                        -- TODO (13 Dec 2019 sam): This means that the crossword data can
-                        -- only be fetched once. Will have to change this if we decide that
-                        -- we want to change the data.
-                        CellUpdate cellUpdateData ->
-                            ( PuzzlePage (Loaded (updateCellData cellUpdateData appData)), Cmd.none )
+                            ( PuzzlePage (Loaded ( channelDetails, setActiveClue appData clueIndex )), Cmd.none )
 
                         CloseModal ->
-                            ( PuzzlePage (Loaded { appData | modal = Empty }), Cmd.none )
+                            ( PuzzlePage
+                                (Loaded ( channelDetails, { appData | modal = Empty } ))
+                            , Cmd.none
+                            )
 
                         SetModalInfo ->
-                            ( PuzzlePage (Loaded { appData | modal = Info }), Cmd.none )
+                            ( PuzzlePage
+                                (Loaded ( channelDetails, { appData | modal = Info } ))
+                            , Cmd.none
+                            )
+
+                        SetModalInvite ->
+                            ( PuzzlePage
+                                (Loaded ( channelDetails, { appData | modal = Invite } ))
+                            , Cmd.none
+                            )
 
                         SolveActiveClue ->
-                            solveActiveClue appData
+                            solveActiveClue ( channelDetails, appData )
 
                         CheckActiveClue ->
-                            checkActiveClue appData
+                            checkActiveClue ( channelDetails, appData )
 
                         HandleSocketMessage message ->
-                            -- TODO (09 Jan 2020 sam): Learn how to decode this message here
-                            ( PuzzlePage (Loaded appData), Cmd.none )
+                            handlePuzzleSocketMessage message ( channelDetails, appData )
 
-                        OtherClueUpdated otherClueIndex ->
-                            ( PuzzlePage (Loaded (updateOtherClue otherClueIndex appData)), Cmd.none )
+                        GoHome ->
+                            case channelDetails.pageData of
+                                Nothing ->
+                                    ( model, Cmd.none )
+
+                                Just pageData ->
+                                    ( LandingPage (LoadingListing pageData)
+                                    , Cmd.batch
+                                        [ Browser.Navigation.pushUrl pageData.key "/"
+                                        , sendLeaveRoom
+                                        ]
+                                    )
 
                         _ ->
-                            ( PuzzlePage (Loaded appData), Cmd.none )
+                            ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ recieveCellUpdate CellUpdate
-        , recieveKeyPress KeyPressed
+        [ recieveKeyPress KeyPressed
         , recieveSocketMessage HandleSocketMessage
-        , recieveOtherClueUpdate OtherClueUpdated
         ]
 
 
 view : Model -> Browser.Document Msg
 view model =
     case model of
-        LandingPage ->
-            renderLandingPage
+        LandingPage landingData ->
+            renderLandingPage landingData
 
         PuzzlePage puzzleData ->
             let
                 body =
                     case puzzleData of
-                        Loaded appData ->
-                            renderAppData appData
+                        Loaded ( channelDetails, appData ) ->
+                            renderAppData ( channelDetails, appData )
 
-                        Failure ->
+                        Failure channelDetails ->
                             div
                                 [ class "cluegrid-data-not-loaded" ]
                                 [ text "Could not fetch data ‾\\_(ツ)_/‾" ]
 
-                        Loading ->
+                        Loading channelDetails ->
                             div
                                 [ class "cluegrid-data-not-loaded" ]
                                 [ text "loading data..." ]
