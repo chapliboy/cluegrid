@@ -67,11 +67,19 @@ renderLandingPage landingData =
                 ]
                 data
             , div [ class "landing-page-footer" ]
-                [ text "built with elm"
-                , br [] []
-                , text "data from  xwordinfo"
-                , br [] []
-                , text "created by chapliboy"
+                [ div []
+                    [ a [ href "https://github.com/chapliboy/cluegrid/" ] [ text "built" ]
+                    , text " with "
+                    , a [ href "https://elm-lang.org" ] [ text "elm" ]
+                    ]
+                , div []
+                    [ text "data from "
+                    , a [ href "https://www.xwordinfo.com/" ] [ text "xwordinfo" ]
+                    ]
+                , div []
+                    [ text "created by "
+                    , a [ href "https://samhattangady.com" ] [ text "chapliboy" ]
+                    ]
                 ]
             ]
         ]

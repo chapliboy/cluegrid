@@ -68,6 +68,9 @@ body {
   color: #ffffff99;
   text-align: center;
 }
+.landing-page-footer a{
+  color: #ffffff99;
+}
 
 .cluegrid-header-container {
   display: flex;

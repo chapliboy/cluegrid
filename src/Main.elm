@@ -44,7 +44,17 @@ sendLeaveRoom =
 
 onUrlChange : Url -> Msg
 onUrlChange url =
-    NoOp
+    -- TODO (15 Jan 2020 sam): This is required to make sure that "back" works as intended
+    -- but the issue is that sending GoHome on / seems to cause some kind of infinite loop
+    -- which breaks the whole browser (because GoHom inturn triggers a / call, and onUrlChange
+    -- is triggered again)
+    case url.path of
+        "/" ->
+            -- GoHome
+            NoOp
+
+        path ->
+            NoOp
 
 
 onUrlRequest : Browser.UrlRequest -> Msg
@@ -99,6 +109,7 @@ update msg model =
                     handleLandingSocketMessage message landingData
 
                 GoHome ->
+                    -- When we try to join a room that doesn't exist/ is already full
                     ( LandingPage (LoadingListing pageData)
                     , Cmd.batch
                         [ Browser.Navigation.pushUrl pageData.key "/"
@@ -175,6 +186,7 @@ update msg model =
                                     , Cmd.batch
                                         [ Browser.Navigation.pushUrl pageData.key "/"
                                         , sendLeaveRoom
+                                        , sendRequestCrosswordListing
                                         ]
                                     )
 

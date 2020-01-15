@@ -30,14 +30,15 @@
         app.ports.recieveKeyPress.send(event.code);
       }
     })
+    var channelName = ''
 
-    function setup_websocket() {
-      // let SOCKET_LINK = 'ws://owlery.chapliboy.com/?name=Bedwig'
-      let SOCKET_LINK = 'ws://127.0.0.1:8080/'
+    function setup_websocket(messages) {
+      let SOCKET_LINK = 'wss://owlery.chapliboy.com/'
+      // let SOCKET_LINK = 'ws://127.0.0.1:8080/'
       console.log('trying to create new ws')
       var ws = new WebSocket(SOCKET_LINK);
-      var channelName = ''
 
+      var msgs = messages
       ws.onopen = function () {
         while (msgs.length > 0) {
           qMsg = msgs.shift();
@@ -47,7 +48,9 @@
       ws.onmessage = function(message) {
         socketMessage = JSON.parse(message.data);
         if (socketMessage.message === 'channel_details') {
-          channelName = socketMessage.data.channelName;
+          console.log(socketMessage)
+          channelName = socketMessage.data.channel_name;
+          console.log('set channel to ', channelName)
         }
         app.ports.recieveSocketMessage.send(socketMessage)
       }
@@ -55,27 +58,33 @@
         // restart websocket if it closes, and rerequest cells if we missed anything
         // TODO (14 Jan 2020 sam): Also we need to rejoin the channel.
         console.log('websocket closed. =/ restarting that shit');
-        setup_websocket()
-        ws_send({message: 'rejoin_room', data: channelName})
-        ws_send({message: 'request_all_cells'});
+        let m = []
+        if (channelName !== '') {
+          m = [{message: 'join_room', data: channelName},
+               {message: 'request_all_cells', data: null}]
+        }
+        setup_websocket(m)
       }
 
       // If we try to send a message before the socket is ready, it causes some
       // issues. So we want to save all the messages that need to be sent, and then
       // send them once the socket is opened
-      var msgs = []
       function ws_send(message) {
         if (ws.readyState !== 1) {
           msgs.push(message)
         } else {
+          console.log('sending, ', message);
           ws.send(JSON.stringify(message));
         }
       }
       app.ports.sendSocketMessage.subscribe(function(data) {
+        if (data.message === 'leave_room') {
+          channelName = '';
+        }
         ws_send(data)
       })
     }
-    setup_websocket()
+    setup_websocket([])
   </script>
 </body>
 </html>

@@ -826,9 +826,6 @@ renderModal ( channelDetails, appData ) =
     -- closing. Would have to change it to some other way if we want to support
     -- multiple different modals
     let
-        _ =
-            Debug.log "channelName" channelDetails.channelName
-
         currentUrl =
             -- TODO (14 Jan 2020 sam): The url is a bit of a scam right now...
             -- There is a hard-coded assumption that the port will be fixed,
@@ -884,7 +881,7 @@ renderModal ( channelDetails, appData ) =
             , div [ class "cluegrid-modal-vert-spacer" ] []
             , div [ class "cluegrid-modal-vert-spacer" ] []
             , div [ class "cluegrid-modal-info" ]
-                [ a [ href "https://github.com/samhattangady/cluegrid/" ] [ text "built" ]
+                [ a [ href "https://github.com/chapliboy/cluegrid/" ] [ text "built" ]
                 , text " with "
                 , a [ href "https://elm-lang.org" ] [ text "elm" ]
                 ]
