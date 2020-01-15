@@ -50,11 +50,10 @@ onUrlChange url =
     -- is triggered again)
     case url.path of
         "/" ->
-            -- GoHome
-            NoOp
+            GoHome False
 
         path ->
-            NoOp
+            GoToPuzzle path
 
 
 onUrlRequest : Browser.UrlRequest -> Msg
@@ -108,13 +107,26 @@ update msg model =
                 HandleSocketMessage message ->
                     handleLandingSocketMessage message landingData
 
-                GoHome ->
-                    -- When we try to join a room that doesn't exist/ is already full
+                GoToPuzzle path ->
                     ( LandingPage (LoadingListing pageData)
-                    , Cmd.batch
-                        [ Browser.Navigation.pushUrl pageData.key "/"
-                        , sendRequestCrosswordListing
-                        ]
+                    , sendJoinChannel path
+                    )
+
+                GoHome pathChange ->
+                    -- When we try to join a room that doesn't exist/ is already full
+                    let
+                        actions =
+                            case pathChange of
+                                True ->
+                                    [ Browser.Navigation.pushUrl pageData.key "/"
+                                    , sendRequestCrosswordListing
+                                    ]
+
+                                False ->
+                                    []
+                    in
+                    ( LandingPage (LoadingListing pageData)
+                    , Cmd.batch actions
                     )
 
                 _ ->
@@ -123,7 +135,22 @@ update msg model =
         PuzzlePage puzzleData ->
             case puzzleData of
                 Failure channelDetails ->
-                    ( PuzzlePage puzzleData, Cmd.none )
+                    case msg of
+                        GoHome pathChange ->
+                            case channelDetails.pageData of
+                                Nothing ->
+                                    ( model, Cmd.none )
+
+                                Just pageData ->
+                                    ( LandingPage (LoadingListing pageData)
+                                    , Cmd.batch
+                                        [ Browser.Navigation.pushUrl pageData.key "/"
+                                        , sendLeaveRoom
+                                        ]
+                                    )
+
+                        _ ->
+                            ( model, Cmd.none )
 
                 Loading channelDetails ->
                     case msg of
@@ -134,6 +161,19 @@ update msg model =
 
                                 Err _ ->
                                     ( PuzzlePage (Failure channelDetails), Cmd.none )
+
+                        GoHome pathChange ->
+                            case channelDetails.pageData of
+                                Nothing ->
+                                    ( model, Cmd.none )
+
+                                Just pageData ->
+                                    ( LandingPage (LoadingListing pageData)
+                                    , Cmd.batch
+                                        [ Browser.Navigation.pushUrl pageData.key "/"
+                                        , sendLeaveRoom
+                                        ]
+                                    )
 
                         _ ->
                             ( model, Cmd.none )
@@ -176,7 +216,7 @@ update msg model =
                         HandleSocketMessage message ->
                             handlePuzzleSocketMessage message ( channelDetails, appData )
 
-                        GoHome ->
+                        GoHome pathChange ->
                             case channelDetails.pageData of
                                 Nothing ->
                                     ( model, Cmd.none )

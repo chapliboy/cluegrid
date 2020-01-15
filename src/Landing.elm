@@ -34,7 +34,7 @@ renderLandingPage landingData =
                         , br [] []
                         , br [] []
                         , br [] []
-                        , div [ class "fake-link", onClick GoHome ] [ text "Click here to start your own puzzle" ]
+                        , div [ class "fake-link", onClick (GoHome True) ] [ text "Click here to start your own puzzle" ]
                         ]
                     ]
 

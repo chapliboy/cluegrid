@@ -792,7 +792,7 @@ renderHeaderRow =
         [ class "cluegrid-header-container" ]
         [ div
             [ class "cluegrid-header-row" ]
-            [ div [ class "cluegrid-header-logo-container", onClick GoHome ]
+            [ div [ class "cluegrid-header-logo-container", onClick (GoHome True) ]
                 [ img [ class "cluegrid-header-logo logo", src "cluegrid_logo.png" ] []
                 ]
             ]

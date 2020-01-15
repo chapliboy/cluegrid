@@ -104,7 +104,8 @@ type Msg
     | SetModalInfo
     | SetModalInvite
     | RequestCreateRoom String
-    | GoHome
+    | GoHome Bool
+    | GoToPuzzle String
     | NoOp
 
 
