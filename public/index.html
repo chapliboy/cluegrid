@@ -6,6 +6,7 @@
   <style>body { padding: 0; margin: 0; }</style>
   <link href="https://fonts.googleapis.com/css?family=Nunito:300,900i&display=swap" rel="stylesheet">
   <link rel='stylesheet' type='text/css' href='styles.css'>
+  <meta content="width=device-width, initial-scale=1" name="viewport" />
 </head>
 <body>
   <div id='cluegrid-app'></div>
@@ -30,11 +31,17 @@
         app.ports.recieveKeyPress.send(event.code);
       }
     })
+
+    app.ports.openMobileKeyboad.subscribe(function(data) {
+      document.getElementById('fake-input-field').focus();
+    })
+
     var channelName = ''
 
     function setup_websocket(messages) {
-      let SOCKET_LINK = 'wss://owlery.chapliboy.com/'
+      // let SOCKET_LINK = 'wss://owlery.chapliboy.com/'
       // let SOCKET_LINK = 'ws://127.0.0.1:8080/'
+      let SOCKET_LINK = 'ws://192.168.0.149:8080/'
       console.log('trying to create new ws')
       var ws = new WebSocket(SOCKET_LINK);
 

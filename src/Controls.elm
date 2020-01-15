@@ -7,8 +7,8 @@ import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, re
 import Clue exposing (getClueId, renderCluesData)
 import Data exposing (decodeAppData)
 import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ChannelDetails, ClueDirection(..), Clues, ControlKey(..), CrossWordListingInfo, KeyboardInput(..), LandingData(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RecieveSocketMessage, RowCol, SendSocketMessage, cellUpdateDataDecoder, channelDetailsDecoder, crosswordListingDecoder)
-import Html exposing (Html, a, br, div, i, img, text)
-import Html.Attributes exposing (class, classList, href, src)
+import Html exposing (Html, a, br, div, i, img, input, text)
+import Html.Attributes exposing (class, classList, href, id, src)
 import Html.Events exposing (onClick, stopPropagationOn)
 import Http
 import Json.Decode as Decode exposing (decodeValue, field, int, nullable)
@@ -796,6 +796,7 @@ renderHeaderRow =
                 [ img [ class "cluegrid-header-logo logo", src "cluegrid_logo.png" ] []
                 ]
             ]
+        , div [ class "cluegrid-mobile-only cluegrid-header-text" ] [ text "designed for desktops mostly... sorry" ]
         , div
             [ class "cluegrid-header-buttons" ]
             [ div [ class "cluegrid-header-button", onClick SolveActiveClue ]

@@ -6,8 +6,8 @@ import Browser.Navigation exposing (Key)
 import Controls exposing (checkActiveClue, handleKeyInput, handleLandingSocketMessage, handlePuzzleSocketMessage, renderAppData, renderHeaderRow, selectCellAndScroll, sendRequestAllCells, sendSocketMessage, setActiveClue, solveActiveClue, updateCellData, updateOtherClue)
 import Data exposing (decodeAppData)
 import Datatypes exposing (ActiveClueIndex, AppData, CellUpdateData, ChannelDetails, ChannelName, Clues, LandingData(..), ModalContents(..), Model(..), Msg(..), PageData, PuzzleData(..), RecieveSocketMessage, SendSocketMessage)
-import Html exposing (div, text)
-import Html.Attributes exposing (class)
+import Html exposing (div, input, text)
+import Html.Attributes exposing (class, id)
 import Http
 import Json.Decode exposing (field, map, string)
 import Json.Encode as Encode
@@ -16,6 +16,9 @@ import Url exposing (Url)
 
 
 port recieveKeyPress : (String -> msg) -> Sub msg
+
+
+port openMobileKeyboad : String -> Cmd msg
 
 
 port recieveSocketMessage : (RecieveSocketMessage -> msg) -> Sub msg
@@ -187,7 +190,7 @@ update msg model =
                             selectCellAndScroll ( channelDetails, appData ) rowNum colNum
 
                         ClueClicked clueIndex ->
-                            ( PuzzlePage (Loaded ( channelDetails, setActiveClue appData clueIndex )), Cmd.none )
+                            ( PuzzlePage (Loaded ( channelDetails, setActiveClue appData clueIndex )), openMobileKeyboad "" )
 
                         CloseModal ->
                             ( PuzzlePage
@@ -268,6 +271,7 @@ view model =
                 [ div
                     [ class "cluegrid-fullscreen-container" ]
                     [ renderHeaderRow
+                    , input [ id "fake-input-field" ] []
                     , div [ class "cluegrid-application-container" ] [ body ]
                     ]
                 ]
