@@ -186,7 +186,6 @@ update msg model =
                                     , Cmd.batch
                                         [ Browser.Navigation.pushUrl pageData.key "/"
                                         , sendLeaveRoom
-                                        , sendRequestCrosswordListing
                                         ]
                                     )
 
