@@ -17,7 +17,7 @@ body {
   --rem-size: calc(var(--cell-size)/3);
 }
 
-.cluegrid-mobile-only {
+.touch-only {
   display: none;
 }
 .logo {
@@ -79,6 +79,7 @@ body {
 #fake-input-field {
   height: 0px;
   opacity: 0;
+  display: none;
 }
 .cluegrid-header-container {
   display: flex;
@@ -364,9 +365,13 @@ body {
   cursor: pointer;
 }
 
-@media only screen and (max-device-width: 680px) {
+@media only screen and (hover:none) {
+  .cluegrid-modal-container {
+    width: 90vw;
+  }
   .cluegrid-container {
     flex-direction: column;
+    --cell-size: calc( (var(--app-width)/15) - 8px);
   }
   .cluegrid-header-logo {
     width: 50vw;
@@ -374,34 +379,133 @@ body {
   .cluegrid-header-row {
     align-self: center;
   }
-  .cluegrid-header-container {
-    flex-direction: column;
-  }
-  .cluegrid-header-buttons {
-    justify-content: space-between;
-  }
-  .cluegrid-header-button {
-    margin-left: 0;
-  }
   .cluegrid-clues-container {
     margin-top: calc(0.5*var(--cell-size));
     margin-left: 0;
   }
   .cluegrid-clues-cluelist {
-    height: 100vh;
+    flex-grow: 1;
+    height: 70vh;
   }
   .landing-page-buttons {
     width:100vw;
     margin: 0;
     padding: 0;
   }
-  .cluegrid-mobile-only {
+  .touch-only {
     display: block;
+  }
+  .not-touch {
+    display: none;
   }
   .cluegrid-header-logo {
     transform: translate(0%, -15%);
   }
   .cluegrid-crossword-cell-grid-number {
     left: 1px;
+  }
+  #fake-input-field {
+    display: block;
+  }
+  .cluegrid-crossword-cell-grid-number {
+    font-size: calc(var(--cell-size) * 0.3);
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .cluegrid-crossword-cell {
+    border-radius: 5px;
+  }
+  .cluegrid-crossword-cell-solution {
+    padding-top: calc(var(--cell-size) * 0.05);
+    font-size: calc(var(--cell-size) * 0.8);
+    font-weight: 900;
+  }
+  .touch-entry-dialog {
+    opacity: 0;
+    transition: opacity .5s ease;
+    opacity: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100vw;
+    background-color: #99cccccc;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+  }
+  .touch-entry-cells {
+    display: flex;
+    align-self: center;
+    flex-wrap: wrap;
+  }
+  .touch-entry-cells .cluegrid-crossword-cell {
+    width: calc(var(--cell-size) * 2);
+    height: calc(var(--cell-size) * 2);
+  }
+  .touch-entry-cells .cluegrid-crossword-cell-solution {
+    padding-top: calc(var(--cell-size) * 0.1);
+    font-size: calc(var(--cell-size) * 1.2);
+    font-weight: 900;
+  }
+  .touch-entry-buttons {
+    display: flex;
+    width: var(--app-width);
+    justify-content: space-between;
+  }
+  .touch-entry-button {
+    height: calc(2.5*var(--cell-size));
+    color: #555;
+    padding-left: calc(var(--cell-size) *0.5);
+    padding-right: calc(var(--cell-size) *0.5);
+    background-color: #ffffff33;
+    font-size: 0.8rem;
+    font-weight: 900;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .touch-entry-button-white {
+    background-color: #ffffff00;
+    color: #ffffff99;
+    font-size: 0.5rem;
+  }
+  .touch-entry-dialog .cluegrid-crossword-cell-is-active-clue {
+    background-color: #ffffff99;
+  }
+  .touch-entry-dialog .cluegrid-clue-is-active {
+    background-color: #ffffff99;
+  }
+  .touch-entry-dialog .cluegrid-crossword-cell-is-active {
+    background-color: #ccccff99;
+  }
+  .cluegrid-clue {
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+  .touch-mode-select {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: calc(var(--cell-size)*0.8);
+  }
+  .mode-select-button {
+    background-color: #ffffff99;
+    padding: calc(var(--cell-size) *0.5);
+    flex-grow: 1;
+    text-align: center;
+    font-weight: 900;
+    border-radius: calc(var(--rem-size) * 0.8);
+    border: 2px solid #ffffff00;
+  }
+  .mode-select-button-active {
+    background-color: #ccccff99;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    flex-grow: 2;
   }
 }

@@ -32,16 +32,47 @@
       }
     })
 
-    app.ports.openMobileKeyboad.subscribe(function(data) {
-      document.getElementById('fake-input-field').focus();
+    app.ports.openTouchKeyboard.subscribe(function(data) {
+      // So touch keyboards don't send the kind of keydown events we are hoping for... they
+      // just send some random gibberish. So we need to actually see what letters the touch
+      // keyboard is typing by checking the (transparent) input field that the inputs are
+      // going into, and use that information to pass keyboard events to elm. Also, we have
+      // to check for backspace keys as well, so we initialise the field with some values
+      // so that we can check if backspace was pressed in which case the length will be less
+      // than initial.
+      let fakeInputElement = document.getElementById('fake-input-field')
+      let initialString = '000000000'
+      for (let i=0; i<=100; i++) {
+        initialString = initialString + '0000000000';
+      } 
+      fakeInputElement.value = initialString
+      fakeInputElement.focus();
+      document.body.style.zoom = "100%";
+      fakeInputElement.oninput = function () {
+        let newString = fakeInputElement.value;
+        if (newString.length > initialString.length) {
+          // User has typed something
+          let character = newString[newString.length-1].toUpperCase();
+          if ((character >= "A" && character <= "Z")) {
+            app.ports.recieveKeyPress.send("Key"+character)
+          }
+        } else {
+          // User has backspaced something
+          app.ports.recieveKeyPress.send("Backspace")
+        }
+        initialString = newString
+      }
+      fakeInputElement.onblur = function () {
+        app.ports.closeTouchKeyboard.send('');
+      }
     })
 
     var channelName = ''
 
     function setup_websocket(messages) {
-      // let SOCKET_LINK = 'wss://owlery.chapliboy.com/'
+      let SOCKET_LINK = 'wss://owlery.chapliboy.com/'
       // let SOCKET_LINK = 'ws://127.0.0.1:8080/'
-      let SOCKET_LINK = 'ws://192.168.0.149:8080/'
+      // let SOCKET_LINK = 'ws://192.168.0.149:8080/'
       console.log('trying to create new ws')
       var ws = new WebSocket(SOCKET_LINK);
 
@@ -55,9 +86,7 @@
       ws.onmessage = function(message) {
         socketMessage = JSON.parse(message.data);
         if (socketMessage.message === 'channel_details') {
-          console.log(socketMessage)
           channelName = socketMessage.data.channel_name;
-          console.log('set channel to ', channelName)
         }
         app.ports.recieveSocketMessage.send(socketMessage)
       }
@@ -80,7 +109,6 @@
         if (ws.readyState !== 1) {
           msgs.push(message)
         } else {
-          console.log('sending, ', message);
           ws.send(JSON.stringify(message));
         }
       }

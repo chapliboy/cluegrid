@@ -2,13 +2,13 @@ module Data exposing (decodeAppData)
 
 import Cell exposing (decodeGrid)
 import Clue exposing (decodeClues)
-import Datatypes exposing (AppData, CluegridInfo, ModalContents(..))
-import Json.Decode exposing (Decoder, field, int, map5, map7, string, succeed)
+import Datatypes exposing (AppData, CluegridInfo, ModalContents(..), TouchActiveElement(..), TouchModeData)
+import Json.Decode exposing (Decoder, field, int, map2, map5, map8, string, succeed)
 
 
 decodeAppData : Decoder AppData
 decodeAppData =
-    map7 AppData
+    map8 AppData
         (field "clues" decodeClues)
         (field "grid" decodeGrid)
         (map5 CluegridInfo
@@ -22,3 +22,7 @@ decodeAppData =
         (succeed Nothing)
         (succeed Empty)
         (succeed Nothing)
+        (map2 TouchModeData
+            (succeed False)
+            (succeed ClueActive)
+        )

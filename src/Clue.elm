@@ -1,4 +1,4 @@
-module Clue exposing (decodeClues, getClueId, renderCluesData)
+module Clue exposing (decodeClues, getClueId, renderClue, renderCluesData)
 
 import Array
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol)
@@ -11,6 +11,7 @@ import Json.Decode
     exposing
         ( Decoder
         , andThen
+        , array
         , fail
         , field
         , int
@@ -44,7 +45,7 @@ decodeClue =
 
 decodeClues : Decoder Clues
 decodeClues =
-    list decodeClue
+    array decodeClue
 
 
 decodeDirection : Decoder ClueDirection
@@ -69,7 +70,7 @@ isActiveClue : Clue -> Maybe Int -> Clues -> Bool
 isActiveClue clue activeClueIndex clues =
     case activeClueIndex of
         Just index ->
-            case Array.get index (Array.fromList clues) of
+            case Array.get index clues of
                 Just activeClue ->
                     if
                         (activeClue.clue_text == clue.clue_text)
@@ -169,8 +170,10 @@ renderCluesData clues grid activeClueIndex =
     div
         [ class "cluegrid-clues-container" ]
         (List.append
-            [ strong [ class "cluegrid-clues-header" ] [ text "CLUES" ] ]
+            [ strong [ class "cluegrid-clues-header not-touch" ] [ text "CLUES" ] ]
             [ div [ class "cluegrid-clues-cluelist", id "cluegrid-clues-scrollable-area" ]
-                (List.indexedMap (\index clue -> renderClue clue index activeClueIndex clues grid) clues)
+                (Array.indexedMap (\index clue -> renderClue clue index activeClueIndex clues grid) clues
+                    |> Array.toList
+                )
             ]
         )

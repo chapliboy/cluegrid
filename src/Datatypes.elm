@@ -39,6 +39,8 @@ module Datatypes exposing
     , RecieveSocketMessage
     , RowCol
     , SendSocketMessage
+    , TouchActiveElement(..)
+    , TouchModeData
     , cellUpdateDataDecoder
     , channelDetailsDecoder
     , crosswordListingDecoder
@@ -105,7 +107,11 @@ type Msg
     | SetModalInvite
     | RequestCreateRoom String
     | GoHome Bool
+    | ToggleActiveClue
     | GoToPuzzle String
+    | OpenTouchEntry
+    | SetTouchMode TouchActiveElement
+    | CloseTouchEntry String
     | NoOp
 
 
@@ -115,6 +121,11 @@ type alias ChannelName =
 
 type alias ClueIndex =
     Int
+
+
+type TouchActiveElement
+    = ClueActive
+    | GridActive
 
 
 type alias RecieveSocketMessage =
@@ -155,7 +166,7 @@ type alias Clue =
 
 
 type alias Clues =
-    List Clue
+    Array Clue
 
 
 type ClueDirection
@@ -222,6 +233,12 @@ type ModalContents
     | Invite
 
 
+type alias TouchModeData =
+    { showTouchEntry : Bool
+    , activeElement : TouchActiveElement
+    }
+
+
 type alias AppData =
     { clues : Clues
     , grid : Grid
@@ -230,6 +247,7 @@ type alias AppData =
     , activeCell : ActiveCell
     , modal : ModalContents
     , otherClueIndex : ActiveClueIndex
+    , touchModeData : TouchModeData
     }
 
 

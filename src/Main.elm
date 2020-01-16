@@ -12,13 +12,17 @@ import Http
 import Json.Decode exposing (field, map, string)
 import Json.Encode as Encode
 import Landing exposing (renderLandingPage, requestCreateRoom)
+import Task
 import Url exposing (Url)
 
 
 port recieveKeyPress : (String -> msg) -> Sub msg
 
 
-port openMobileKeyboad : String -> Cmd msg
+port openTouchKeyboard : String -> Cmd msg
+
+
+port closeTouchKeyboard : (String -> msg) -> Sub msg
 
 
 port recieveSocketMessage : (RecieveSocketMessage -> msg) -> Sub msg
@@ -187,10 +191,25 @@ update msg model =
                             handleKeyInput key ( channelDetails, appData )
 
                         CellClicked rowNum colNum ->
-                            selectCellAndScroll ( channelDetails, appData ) rowNum colNum
+                            let
+                                ( newModel, cmdMsgs ) =
+                                    selectCellAndScroll ( channelDetails, appData ) rowNum colNum
+                            in
+                            ( newModel
+                            , Cmd.batch
+                                [ cmdMsgs
+                                , openTouchKeyboard ""
+                                , Task.perform (always OpenTouchEntry) (Task.succeed ())
+                                ]
+                            )
 
                         ClueClicked clueIndex ->
-                            ( PuzzlePage (Loaded ( channelDetails, setActiveClue appData clueIndex )), openMobileKeyboad "" )
+                            ( PuzzlePage (Loaded ( channelDetails, setActiveClue appData clueIndex ))
+                            , Cmd.batch
+                                [ openTouchKeyboard ""
+                                , Task.perform (always OpenTouchEntry) (Task.succeed ())
+                                ]
+                            )
 
                         CloseModal ->
                             ( PuzzlePage
@@ -211,13 +230,93 @@ update msg model =
                             )
 
                         SolveActiveClue ->
-                            solveActiveClue ( channelDetails, appData )
+                            let
+                                ( newModel, cmdMsgs ) =
+                                    solveActiveClue ( channelDetails, appData )
+                            in
+                            ( newModel
+                            , Cmd.batch
+                                [ cmdMsgs
+                                , Task.perform (always OpenTouchEntry) (Task.succeed ())
+                                , openTouchKeyboard ""
+                                ]
+                            )
 
                         CheckActiveClue ->
-                            checkActiveClue ( channelDetails, appData )
+                            let
+                                ( newModel, cmdMsgs ) =
+                                    checkActiveClue ( channelDetails, appData )
+                            in
+                            ( newModel
+                            , Cmd.batch
+                                [ cmdMsgs
+                                , Task.perform (always OpenTouchEntry) (Task.succeed ())
+                                , openTouchKeyboard ""
+                                ]
+                            )
+
+                        ToggleActiveClue ->
+                            ( model
+                            , Cmd.batch
+                                [ Task.perform (always KeyPressed "Enter") (Task.succeed "Enter")
+                                , Task.perform (always OpenTouchEntry) (Task.succeed ())
+                                , openTouchKeyboard ""
+                                ]
+                            )
 
                         HandleSocketMessage message ->
                             handlePuzzleSocketMessage message ( channelDetails, appData )
+
+                        SetTouchMode mode ->
+                            let
+                                touchModeData =
+                                    appData.touchModeData
+
+                                newTouchModeData =
+                                    { touchModeData | activeElement = mode }
+                            in
+                            ( PuzzlePage
+                                (Loaded
+                                    ( channelDetails
+                                    , { appData | touchModeData = newTouchModeData }
+                                    )
+                                )
+                            , Cmd.none
+                            )
+
+                        CloseTouchEntry _ ->
+                            let
+                                touchModeData =
+                                    appData.touchModeData
+
+                                newTouchModeData =
+                                    { touchModeData | showTouchEntry = False }
+                            in
+                            ( PuzzlePage
+                                (Loaded
+                                    ( channelDetails
+                                    , { appData | touchModeData = newTouchModeData }
+                                    )
+                                )
+                            , Cmd.none
+                            )
+
+                        OpenTouchEntry ->
+                            let
+                                touchModeData =
+                                    appData.touchModeData
+
+                                newTouchModeData =
+                                    { touchModeData | showTouchEntry = True }
+                            in
+                            ( PuzzlePage
+                                (Loaded
+                                    ( channelDetails
+                                    , { appData | touchModeData = newTouchModeData }
+                                    )
+                                )
+                            , Cmd.none
+                            )
 
                         GoHome pathChange ->
                             case channelDetails.pageData of
@@ -241,6 +340,7 @@ subscriptions model =
     Sub.batch
         [ recieveKeyPress KeyPressed
         , recieveSocketMessage HandleSocketMessage
+        , closeTouchKeyboard CloseTouchEntry
         ]
 
 

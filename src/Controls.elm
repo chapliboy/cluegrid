@@ -4,9 +4,9 @@ import Array
 import Browser.Dom as Dom
 import Browser.Navigation
 import Cell exposing (crosswordCellisBlank, getCellFromRowCol, isRowColEqual, renderCell, renderGrid, updateCellEntry)
-import Clue exposing (getClueId, renderCluesData)
+import Clue exposing (getClueId, renderClue, renderCluesData)
 import Data exposing (decodeAppData)
-import Datatypes exposing (ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ChannelDetails, ClueDirection(..), Clues, ControlKey(..), CrossWordListingInfo, KeyboardInput(..), LandingData(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RecieveSocketMessage, RowCol, SendSocketMessage, cellUpdateDataDecoder, channelDetailsDecoder, crosswordListingDecoder)
+import Datatypes exposing (ActiveCell, ActiveClueIndex, AppData, ArrowKeyDirection(..), Cell, CellUpdateData, ChannelDetails, Clue, ClueDirection(..), Clues, ControlKey(..), CrossWordListingInfo, KeyboardInput(..), LandingData(..), ModalContents(..), Model(..), Msg(..), PuzzleData(..), RecieveSocketMessage, RowCol, SendSocketMessage, TouchActiveElement(..), cellUpdateDataDecoder, channelDetailsDecoder, crosswordListingDecoder)
 import Html exposing (Html, a, br, div, i, img, input, text)
 import Html.Attributes exposing (class, classList, href, id, src)
 import Html.Events exposing (onClick, stopPropagationOn)
@@ -49,7 +49,7 @@ updateCellData cellUpdateData appData =
 
 setActiveClue : AppData -> Int -> AppData
 setActiveClue appData clueIndex =
-    case Array.get clueIndex (Array.fromList appData.clues) of
+    case Array.get clueIndex appData.clues of
         Just clue ->
             case
                 getCellFromRowCol
@@ -220,7 +220,7 @@ changeClueIndex appData change =
                     0
 
                 Just index ->
-                    modBy (List.length appData.clues) (index + change)
+                    modBy (Array.length appData.clues) (index + change)
     in
     setActiveClue appData clueIndex
 
@@ -417,7 +417,7 @@ moveNext : AppData -> AppData
 moveNext appData =
     case appData.activeClueIndex of
         Just clueIndex ->
-            case Array.get clueIndex (Array.fromList appData.clues) of
+            case Array.get clueIndex appData.clues of
                 Just clue ->
                     case clue.direction of
                         Across ->
@@ -437,7 +437,7 @@ movePrevious : AppData -> AppData
 movePrevious appData =
     case appData.activeClueIndex of
         Just clueIndex ->
-            case Array.get clueIndex (Array.fromList appData.clues) of
+            case Array.get clueIndex appData.clues of
                 Just clue ->
                     case clue.direction of
                         Across ->
@@ -546,7 +546,7 @@ updateActiveClue activeClueIndex cell activeCell clues =
         Just activeIndex ->
             let
                 currentDirection =
-                    case Array.get activeIndex (Array.fromList clues) of
+                    case Array.get activeIndex clues of
                         Just clue ->
                             clue.direction
 
@@ -796,12 +796,11 @@ renderHeaderRow =
                 [ img [ class "cluegrid-header-logo logo", src "cluegrid_logo.png" ] []
                 ]
             ]
-        , div [ class "cluegrid-mobile-only cluegrid-header-text" ] [ text "designed for desktops mostly... sorry" ]
         , div
             [ class "cluegrid-header-buttons" ]
-            [ div [ class "cluegrid-header-button", onClick SolveActiveClue ]
+            [ div [ class "cluegrid-header-button not-touch", onClick SolveActiveClue ]
                 [ text "SOLVE CLUE" ]
-            , div [ class "cluegrid-header-button", onClick CheckActiveClue ]
+            , div [ class "cluegrid-header-button not-touch", onClick CheckActiveClue ]
                 [ text "CHECK CLUE" ]
             , div [ class "cluegrid-header-button", onClick SetModalInfo ]
                 [ text "INFO" ]
@@ -838,7 +837,8 @@ renderModal ( channelDetails, appData ) =
                     ""
 
                 Just pageData ->
-                    pageData.url.host
+                    "https://"
+                        ++ pageData.url.host
                         ++ "/"
                         ++ channelDetails.channelName
 
@@ -898,11 +898,134 @@ renderModal ( channelDetails, appData ) =
         ]
 
 
+getOtherClueText : AppData -> String
+getOtherClueText appData =
+    let
+        index =
+            appData.activeClueIndex |> Maybe.withDefault -1
+
+        cell =
+            getCellFromRowCol appData.grid (appData.activeCell |> Maybe.withDefault ( -1, -1 ))
+
+        ( acrossClueIndex, downClueIndex ) =
+            case cell of
+                Nothing ->
+                    ( Nothing, Nothing )
+
+                Just c ->
+                    ( c.acrossClueIndex, c.downClueIndex )
+    in
+    if appData.activeClueIndex == acrossClueIndex then
+        case downClueIndex of
+            Nothing ->
+                ""
+
+            Just _ ->
+                "SEE DOWN CLUE"
+
+    else
+        case acrossClueIndex of
+            Nothing ->
+                ""
+
+            Just _ ->
+                "SEE ACROSS CLUE"
+
+
+renderTouchEntryDialog : ( ChannelDetails, AppData ) -> Html Msg
+renderTouchEntryDialog ( channelDetails, appData ) =
+    case appData.touchModeData.showTouchEntry of
+        False ->
+            div [] []
+
+        True ->
+            let
+                index =
+                    appData.activeClueIndex |> Maybe.withDefault -1
+
+                cells =
+                    appData.grid
+                        |> Array.foldr Array.append (Array.fromList [])
+                        |> Array.filter (\cell -> isPartOfClue index cell)
+                        |> Array.map
+                            (\cell ->
+                                renderCell
+                                    cell
+                                    appData.activeClueIndex
+                                    appData.otherClueIndex
+                                    appData.activeCell
+                            )
+                        |> Array.toList
+
+                currentClue =
+                    case Array.get index appData.clues of
+                        Just clue ->
+                            [ renderClue
+                                clue
+                                index
+                                appData.activeClueIndex
+                                appData.clues
+                                appData.grid
+                            ]
+
+                        Nothing ->
+                            []
+            in
+            div [ class "touch-only touch-entry-dialog" ]
+                [ div [ class "touch-entry-cells" ] cells
+                , div [ class "touch-entry-clue" ] currentClue
+                , div [ class "touch-entry-buttons" ]
+                    [ div [ class "touch-entry-button", onClick ToggleActiveClue ]
+                        [ text (getOtherClueText appData) ]
+                    , div [ class "touch-entry-button touch-entry-button-white", onClick SolveActiveClue ]
+                        [ text "SOLVE CLUE" ]
+                    , div [ class "touch-entry-button touch-entry-button-white", onClick CheckActiveClue ]
+                        [ text "CHECK CLUE" ]
+                    , div [ class "touch-entry-button", onClick (CloseTouchEntry "") ]
+                        [ text "CLOSE" ]
+                    ]
+                ]
+
+
+renderClueAndGridButtons : AppData -> Html Msg
+renderClueAndGridButtons appData =
+    div [ class "touch-only touch-mode-select" ]
+        [ div
+            [ class "mode-select-button"
+            , classList
+                [ ( "mode-select-button-active", appData.touchModeData.activeElement == ClueActive )
+                ]
+            , onClick (SetTouchMode ClueActive)
+            ]
+            [ text "CLUES" ]
+        , div
+            [ class "mode-select-button"
+            , classList
+                [ ( "mode-select-button-active", appData.touchModeData.activeElement == GridActive )
+                ]
+            , onClick (SetTouchMode GridActive)
+            ]
+            [ text "GRID" ]
+        ]
+
+
 renderAppData : ( ChannelDetails, AppData ) -> Html Msg
 renderAppData ( channelDetails, appData ) =
     div
         [ class "cluegrid-container" ]
-        [ renderGrid appData.grid appData.activeClueIndex appData.otherClueIndex appData.activeCell
-        , renderCluesData appData.clues appData.grid appData.activeClueIndex
+        [ renderClueAndGridButtons appData
+        , div
+            [ classList
+                [ ( "not-touch", appData.touchModeData.activeElement == ClueActive )
+                ]
+            ]
+            [ renderGrid appData.grid appData.activeClueIndex appData.otherClueIndex appData.activeCell ]
+        , div
+            [ classList
+                [ ( "not-touch", appData.touchModeData.activeElement == GridActive )
+                ]
+            ]
+            [ renderCluesData appData.clues appData.grid appData.activeClueIndex ]
         , renderModal ( channelDetails, appData )
+        , renderTouchEntryDialog ( channelDetails, appData )
         ]

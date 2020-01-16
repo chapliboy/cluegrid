@@ -28,7 +28,11 @@ renderLandingPage landingData =
 
                 FailedJoining key ->
                     [ div [ class "landing-page-text landing-page-loading" ]
-                        [ text "Could not join room... Currently only two players supported"
+                        [ text "Could not join crossword..."
+                        , br [] []
+                        , text "It may not exist or it may be full..."
+                        , br [] []
+                        , text "Currently only two players supported"
                         , br [] []
                         , text " ‾\\_(ツ)_/‾"
                         , br [] []
