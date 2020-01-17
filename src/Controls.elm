@@ -991,7 +991,7 @@ renderClueAndGridButtons : AppData -> Html Msg
 renderClueAndGridButtons appData =
     div [ class "touch-only touch-mode-select" ]
         [ div
-            [ class "mode-select-button"
+            [ class "mode-select-button clues-border"
             , classList
                 [ ( "mode-select-button-active", appData.touchModeData.activeElement == ClueActive )
                 ]
@@ -999,7 +999,7 @@ renderClueAndGridButtons appData =
             ]
             [ text "CLUES" ]
         , div
-            [ class "mode-select-button"
+            [ class "mode-select-button grid-border"
             , classList
                 [ ( "mode-select-button-active", appData.touchModeData.activeElement == GridActive )
                 ]
@@ -1007,6 +1007,43 @@ renderClueAndGridButtons appData =
             ]
             [ text "GRID" ]
         ]
+
+
+renderDirectionButtons : AppData -> Html Msg
+renderDirectionButtons appData =
+    let
+        direction =
+            case appData.activeClueIndex of
+                Nothing ->
+                    Across
+
+                Just index ->
+                    case Array.get index appData.clues of
+                        Nothing ->
+                            Across
+
+                        Just clue ->
+                            clue.direction
+    in
+    case appData.touchModeData.activeElement of
+        ClueActive ->
+            div [] []
+
+        GridActive ->
+            div [ class "touch-only direction-buttons" ]
+                [ div
+                    [ class "direction-button across-direction"
+                    , classList [ ( "direction-button-active", direction == Across ) ]
+                    , onClick ChangeDirection
+                    ]
+                    [ text "Across" ]
+                , div
+                    [ class "direction-button down-direction"
+                    , classList [ ( "direction-button-active", direction == Down ) ]
+                    , onClick ChangeDirection
+                    ]
+                    [ text "Down" ]
+                ]
 
 
 renderAppData : ( ChannelDetails, AppData ) -> Html Msg
@@ -1026,6 +1063,7 @@ renderAppData ( channelDetails, appData ) =
                 ]
             ]
             [ renderCluesData appData.clues appData.grid appData.activeClueIndex ]
+        , renderDirectionButtons appData
         , renderModal ( channelDetails, appData )
         , renderTouchEntryDialog ( channelDetails, appData )
         ]

@@ -264,6 +264,9 @@ update msg model =
                                 ]
                             )
 
+                        ChangeDirection ->
+                            ( model, Task.perform (always KeyPressed "Enter") (Task.succeed "Enter") )
+
                         HandleSocketMessage message ->
                             handlePuzzleSocketMessage message ( channelDetails, appData )
 

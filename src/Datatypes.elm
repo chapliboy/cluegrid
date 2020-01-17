@@ -108,6 +108,7 @@ type Msg
     | RequestCreateRoom String
     | GoHome Bool
     | ToggleActiveClue
+    | ChangeDirection
     | GoToPuzzle String
     | OpenTouchEntry
     | SetTouchMode TouchActiveElement
